@@ -1,0 +1,19 @@
+@import "src/styles/global.module.scss";
+
+.standItemWrapper {
+  width: 100%;
+
+  .header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    margin-right: 28px;
+
+    h1 {
+      text-transform: uppercase;
+    }
+  }
+
+  .standRepositories {
+    margin-top: $content-top-padding;
+  }
+}

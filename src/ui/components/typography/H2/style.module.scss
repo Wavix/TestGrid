@@ -1,0 +1,9 @@
+@import "./src/styles/palette.module.scss";
+@import "./src/styles/global.module.scss";
+
+.h2 {
+  font-size: 36px;
+  color: $tiffany-blue;
+  font-weight: 500;
+  margin-bottom: $content-top-padding;
+}

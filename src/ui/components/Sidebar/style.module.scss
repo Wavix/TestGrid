@@ -1,0 +1,107 @@
+@import "./src/styles/palette.module.scss";
+@import "./src/styles/global.module.scss";
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: $sidebar-width;
+  height: 100%;
+  padding-top: $content-top-padding;
+  background-color: $dark;
+  border-right: 1px solid $split-line;
+
+  .logoWrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    height: 80px;
+
+    svg {
+      width: 34px;
+      height: 34px;
+    }
+  }
+
+  .bottom {
+    display: flex;
+    margin-top: auto;
+    margin-bottom: 20px;
+    justify-content: center;
+    flex-direction: column;
+
+    .avatar {
+      align-self: center;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+  }
+
+  .notifications {
+    .player {
+      display: none;
+    }
+
+    .notificationIcon {
+      position: relative;
+
+      &.new {
+        &:after {
+          position: absolute;
+          top: -3px;
+          right: 1px;
+          content: "";
+          width: 8px;
+          height: 8px;
+          background-color: $red;
+          border-radius: 50%;
+          border: 2px solid $dark;
+        }
+      }
+
+      svg {
+        min-width: 26px;
+        min-height: 26px;
+        color: #8b8c98;
+      }
+    }
+  }
+}
+
+.notificationsDrawer {
+  background: $dark !important;
+  color: #fff !important;
+  border-left: 1px solid $split-line;
+
+  .header {
+    padding-top: 26px;
+  }
+
+  .closeButton {
+    top: 18px;
+    outline: none;
+  }
+
+  .drawerBody {
+    padding-top: 38px;
+
+    .notificationItem {
+      margin-bottom: 24px;
+      border-left: 3px solid $tiffany-blue;
+      padding-left: 10px;
+
+      .date {
+        width: fit-content;
+        color: $tiffany-blue;
+        font-size: 13px;
+        border-radius: 4px;
+      }
+
+      .message {
+        padding-top: 10px;
+      }
+    }
+  }
+}

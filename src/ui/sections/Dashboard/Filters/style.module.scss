@@ -1,0 +1,12 @@
+@import "src/styles/global.module.scss";
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-gap: $content-padding;
+
+  .column {
+    display: flex;
+    align-items: center;
+  }
+}

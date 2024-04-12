@@ -1,0 +1,52 @@
+* {
+  font-family: "Roboto", sans-serif;
+}
+
+body {
+  font-size: 15px;
+}
+
+html,
+body,
+body > div:first-child,
+div#__next,
+div#__next > div {
+  height: 100%;
+  background-color: #191e2a;
+}
+
+a {
+  color: #0bc5ea !important;
+  text-decoration: underline !important;
+}
+
+a:hover {
+  color: #0bc5ea !important;
+  text-decoration: none !important;
+}
+
+/**
+  * React Select
+  */
+.dropdown__menu {
+  background-color: #212632 !important;
+  border: 1px solid #8b8c98;
+}
+
+.dropdown__option {
+  &:hover {
+    background-color: #31394b !important;
+  }
+}
+
+.dropdown__option--is-focused {
+  background-color: #31394b !important;
+}
+
+.dropdown__multi-value {
+  background-color: #26375b !important;
+}
+
+.dropdown__multi-value__label {
+  color: #fff !important;
+}

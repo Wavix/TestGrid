@@ -1,0 +1,26 @@
+@import "./src/styles/palette.module.scss";
+
+.multiSelect {
+  height: var(--chakra-sizes-10);
+  height: fit-content;
+
+  > div:first-of-type {
+    border-color: $form-outline !important;
+    min-height: var(--chakra-sizes-10);
+    background-color: transparent;
+
+    > div:first-of-type {
+      background-color: transparent;
+      color: #fff;
+    }
+
+    &:focus-within {
+      border-color: $tiffany-blue !important;
+      box-shadow: 0 0 0 1px $tiffany-blue !important;
+    }
+
+    &:hover {
+      border-color: var(--chakra-colors-gray-300);
+    }
+  }
+}

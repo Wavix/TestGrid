@@ -1,0 +1,6 @@
+gulpfile.js
+ecosystem.config.js
+jest.config.js
+jest.before.ts
+jest.setup.ts
+lint-staged.config.js

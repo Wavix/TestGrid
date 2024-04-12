@@ -1,0 +1,21 @@
+.switchContainer {
+  &.readonly {
+    opacity: 0.6;
+  }
+
+  .inlineHint {
+    position: relative;
+    display: inline-flex;
+    margin-left: 14px;
+    vertical-align: text-top;
+  }
+
+  .left {
+    margin-left: 0;
+    margin-right: 10px;
+
+    &.hint {
+      margin-right: 23px;
+    }
+  }
+}

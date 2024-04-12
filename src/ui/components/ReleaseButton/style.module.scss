@@ -1,0 +1,21 @@
+@import "./src/styles/palette.module.scss";
+
+.releaseButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 22px;
+  text-transform: uppercase;
+  font-size: 12px;
+  background-color: #8700ff;
+  border-radius: 0.25rem;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 500;
+  user-select: none;
+
+  &:hover {
+    background-color: #a034ff;
+  }
+}

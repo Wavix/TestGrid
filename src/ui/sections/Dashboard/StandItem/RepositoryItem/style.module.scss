@@ -1,0 +1,101 @@
+@import "./src/styles/palette.module.scss";
+@import "./src/styles/global.module.scss";
+
+.repositoryItem {
+  display: grid;
+  grid-template-columns: 200px auto auto;
+  position: relative;
+  width: 100%;
+  height: 60px;
+  align-content: center;
+  align-items: center;
+  padding: 0 $content-padding;
+  margin-bottom: 2px;
+  border-bottom: 1px solid $split-line;
+  opacity: 1;
+
+  :before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+    background-color: $green;
+    opacity: 1;
+  }
+
+  &.booked {
+    :before {
+      background-color: $red;
+    }
+  }
+
+  &.blinking {
+    animation: blinkReleased 1s step-start 0s infinite;
+  }
+
+  &:nth-child(even) {
+    background: #252c3b;
+  }
+
+  &.own {
+    background-color: #26375b;
+    animation: blinkOwn 3s infinite;
+  }
+
+  .repositoryName {
+    font-weight: 500;
+  }
+
+  .repositoryBookingUser {
+    font-weight: 500;
+  }
+
+  .repositoryBookingMeta {
+    font-size: 12px;
+
+    .repositoryBookingMetaBranch {
+      color: $yellow;
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+
+    .actionIcon {
+      cursor: pointer;
+      svg {
+        max-width: 20px;
+        max-height: 20px;
+        fill: #72fbf3;
+        stroke: #72fbf3;
+      }
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+}
+
+@keyframes blinkOwn {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes blinkReleased {
+  50% {
+    opacity: 0.3;
+  }
+}

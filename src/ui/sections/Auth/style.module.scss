@@ -1,0 +1,132 @@
+@import "src/styles/palette.module.scss";
+
+.authPage {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(134deg, #191e2a 0%, #2c3345 69.79%, #374667 100%);
+
+  .mainWindow {
+    width: 812px;
+    height: 524px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: $dark;
+    box-shadow: 3px 1px 10px -1px rgba(0, 0, 0, 0.12);
+    margin: auto;
+
+    .mainWindowContainer {
+      display: grid;
+      height: 100%;
+      grid-template-columns: 449px 1fr;
+
+      .left {
+        position: relative;
+        background-color: #111726;
+        border-radius: 8px 0px 0px 8px;
+        color: #fff;
+        overflow-x: hidden;
+        overflow-y: hidden;
+
+        .container {
+          padding: 46px;
+        }
+
+        .welcome {
+          margin-top: 118px;
+          font-size: 36px;
+          font-style: normal;
+          font-weight: 700;
+          line-height: normal;
+        }
+
+        .welcome2 {
+          margin-top: 12px;
+          font-size: 22px;
+          font-weight: 300;
+          line-height: normal;
+          max-width: 194px;
+        }
+
+        .link {
+          position: absolute;
+          bottom: 46px;
+          font-size: 16px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: normal;
+          z-index: 10;
+
+          a {
+            color: #fff !important;
+            text-decoration: none !important;
+          }
+        }
+
+        .lines {
+          position: absolute;
+          bottom: -15px;
+          right: -19px;
+        }
+      }
+
+      .right {
+        position: relative;
+
+        .container {
+          padding: 46px 32px;
+        }
+
+        h1 {
+          font-size: 30px;
+          font-style: normal;
+          font-weight: 700;
+          line-height: normal;
+          color: #fff;
+        }
+
+        .emailLabel {
+          position: absolute;
+          color: #fff;
+          top: 83px;
+          font-size: 17px;
+          text-decoration: underline;
+        }
+
+        .form {
+          display: flex;
+          flex-direction: column;
+          row-gap: 12px;
+          margin-top: 102px;
+
+          input {
+            background-color: transparent;
+            color: #fff;
+          }
+
+          div:last-child {
+            margin-top: 30px;
+          }
+
+          button {
+            display: none;
+          }
+        }
+
+        .errorMessage {
+          color: red;
+          margin-top: 22px;
+          font-size: 13px;
+        }
+      }
+    }
+  }
+}
+
+.version {
+  position: absolute;
+  bottom: 10px;
+  left: 20px;
+  font-size: 12px;
+  color: #6274a0;
+}

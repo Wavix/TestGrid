@@ -1,0 +1,8 @@
+@import "src/styles/global.module.scss";
+@import "src/styles/palette.module.scss";
+
+.mainLayout {
+  padding-left: $sidebar-width;
+  min-height: 100%;
+  background-color: $background;
+}

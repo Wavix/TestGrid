@@ -1,0 +1,50 @@
+@import "./src/styles/global.module.scss";
+@import "./src/styles/palette.module.scss";
+
+.menuButtonWrapper {
+  display: grid;
+  justify-items: center;
+  cursor: pointer;
+  position: relative;
+
+  .menuButtonIconWrapper {
+    width: $sidebar-width;
+    height: $sidebar-width;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    svg {
+      min-width: 20px;
+      min-height: 20px;
+      fill: #8b8c98;
+    }
+  }
+
+  &.active {
+    &:before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      background-color: $green;
+      width: 4px;
+      border-radius: 4px;
+      height: 100%;
+    }
+
+    .menuButtonIconWrapper {
+      svg {
+        fill: #fff;
+      }
+    }
+  }
+
+  &:hover {
+    background-color: #2f3749;
+
+    svg {
+      fill: #fff;
+    }
+  }
+}

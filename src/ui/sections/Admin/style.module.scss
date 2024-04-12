@@ -1,0 +1,26 @@
+@import "./src/styles/palette.module.scss";
+
+.email {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.tableHeader {
+  th {
+    color: #fff;
+  }
+}
+
+.tableItem {
+  &:nth-child(even) {
+    background: #252c3b;
+  }
+
+  .admin {
+    color: $tiffany-blue;
+  }
+
+  .blocked {
+    color: $red;
+  }
+}

@@ -1,0 +1,32 @@
+@import "src/styles/global.module.scss";
+@import "src/styles/mixins.module.scss";
+
+.player {
+  display: none;
+}
+
+.standsLayout {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  grid-column-gap: 20px;
+  width: 100%;
+  margin-top: $content-top-padding;
+
+  > div {
+    margin-bottom: 30px;
+  }
+
+  @include from($lg) {
+    grid-template-columns: repeat(2, 1fr);
+    margin-bottom: 0;
+  }
+
+  @include from($xxl) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.historyWrapper {
+  max-height: 411px;
+  overflow-y: auto;
+}
