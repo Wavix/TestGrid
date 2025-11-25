@@ -45,7 +45,7 @@ export class DashboardService {
     const regex = /([A-Za-z]+-\d+)/
     const match = branchName.match(regex)
 
-    if (match) return match[0].toUpperCase()
+    if (match) return match[0].toUpperCase().replaceAll("WX-", "DEV-")
     return null
   }
 }
