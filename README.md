@@ -15,13 +15,39 @@ After integrating into the pipeline process, you gain the ability to control the
 
 ### Quick start
 
-1. For a quick demonstration, simulate the operation of the CI by passing the user's name, email, and other data through a `curl` request to initiate the automatic creation of a user in the system.
+1. Install dependencies:
+
+```
+pnpm install
+```
+
+2. Create local env file from template and set your Jira URL:
+
+```
+cp .env.example .env
+```
+
+`NEXT_PUBLIC_JIRA_URL` is used for Jira links in the UI.
+
+3. Create the SQLite database:
+
+```
+pnpm cli dbcreate
+```
+
+4. Run the app:
+
+```
+pnpm dev
+```
+
+5. For a quick demonstration, simulate the operation of the CI by passing the user's name, email, and other data through a `curl` request to initiate the automatic creation of a user in the system.
 
 ```
 curl -XPOST -H "Content-type: application/json" -d '{ "repository": "backend", "user_name": "John Smit", "user_email": "john@company.org", "namespace": "myorg", "stand": "qa1", "branch": "infra/test" }' "http://localhost:3000/api/book"
 ```
 
-2. Open http://localhost:3000 in your browser and enter `john@company.org` as the user for authentication. After that, the system will prompt you to set a password for this user.
+6. Open http://localhost:3000 in your browser and enter `john@company.org` as the user for authentication. After that, the system will prompt you to set a password for this user.
 
 ### Pipeline Integration
 **Example: GitLab Integration**
