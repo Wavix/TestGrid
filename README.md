@@ -29,6 +29,17 @@ cp .env.example .env
 
 `NEXT_PUBLIC_JIRA_URL` is used for Jira links in the UI.
 
+Optional (if you need to remap Jira task prefixes parsed from branch names):
+
+- `JIRA_TASK_REPLACE_FROM`
+- `JIRA_TASK_REPLACE_TO`
+
+Example:
+
+- branch contains `WX-123`
+- with `JIRA_TASK_REPLACE_FROM=WX-` and `JIRA_TASK_REPLACE_TO=DEV-`
+- UI will show `DEV-123`
+
 3. Create the SQLite database:
 
 ```

@@ -3,6 +3,7 @@ import type { BookingAttributes } from "@/app/database/interfaces/booking.interf
 import type { RepositoryAttributes } from "@/app/database/interfaces/repository.interface"
 import type { StandAttributes } from "@/app/database/interfaces/stand.interface"
 import type { UserAttributes } from "@/app/database/interfaces/user.interface"
+import { config } from "@/config"
 import type { BaseUserResponse } from "@/interfaces/auth.interface"
 
 export class DashboardService {
@@ -45,7 +46,17 @@ export class DashboardService {
     const regex = /([A-Za-z]+-\d+)/
     const match = branchName.match(regex)
 
-    if (match) return match[0].toUpperCase().replaceAll("WX-", "DEV-")
+    if (match) {
+      const jiraTaskName = match[0].toUpperCase()
+      const { jiraTaskReplaceFrom, jiraTaskReplaceTo } = config
+
+      if (jiraTaskReplaceFrom && jiraTaskReplaceTo) {
+        return jiraTaskName.replaceAll(jiraTaskReplaceFrom.toUpperCase(), jiraTaskReplaceTo.toUpperCase())
+      }
+
+      return jiraTaskName
+    }
+
     return null
   }
 }
