@@ -23,11 +23,9 @@ const nextConfig = {
       }
     ]
   },
-  experimental: {
-    serverComponentsExternalPackages: ["sequelize", "sequelize-typescript"]
-  },
-  publicRuntimeConfig: {
-    version
+  serverExternalPackages: ["sequelize", "sequelize-typescript"],
+  env: {
+    NEXT_PUBLIC_APP_VERSION: version
   },
   webpack: config => {
     // eslint-disable-next-line no-param-reassign

@@ -13,15 +13,70 @@
 
 After integrating into the pipeline process, you gain the ability to control the deployment to test stands for your QA engineers. If a test stand is occupied by another QA engineer, the deployment to the occupied stand will be blocked. You can also switch the stand into smoke-test mode, and deployment for testers will not be possible.
 
-### Quick start
+### Local setup
 
-1. For a quick demonstration, simulate the operation of the CI by passing the user's name, email, and other data through a `curl` request to initiate the automatic creation of a user in the system.
+#### Requirements
 
+- Node.js 20+
+- pnpm 10+
+
+#### 1. Install dependencies
+
+```bash
+pnpm install
 ```
-curl -XPOST -H "Content-type: application/json" -d '{ "repository": "backend", "user_name": "John Smit", "user_email": "john@company.org", "namespace": "myorg", "stand": "qa1", "branch": "infra/test" }' "http://localhost:3000/api/book"
+
+#### 2. Initialize database
+
+Create local SQLite database and tables:
+
+```bash
+pnpm cli dbcreate
 ```
 
-2. Open http://localhost:3000 in your browser and enter `john@company.org` as the user for authentication. After that, the system will prompt you to set a password for this user.
+This command recreates the database from models (`sync({ force: true })`), so it removes existing local data.
+
+#### 3. Run application
+
+```bash
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+#### 4. Create first user via API
+
+Send a booking request (this creates namespace/user/repository/stand automatically if they do not exist):
+
+```bash
+curl -XPOST -H "Content-type: application/json" \
+  -d '{ "repository": "backend", "user_name": "John Smit", "user_email": "john@company.org", "namespace": "myorg", "stand": "qa1", "branch": "infra/test" }' \
+  "http://localhost:3000/api/book"
+```
+
+Expected response:
+
+```json
+"Success!"
+```
+
+After that, sign in with `john@company.org` on [http://localhost:3000](http://localhost:3000) and set password.
+
+#### 5. Production build check
+
+```bash
+pnpm build
+```
+
+### Troubleshooting
+
+- `SQLITE_ERROR: no such table: namespaces`
+  - Database is not initialized. Run `pnpm cli dbcreate` and restart `pnpm dev`.
+- `Could not locate the bindings file ... sqlite3`
+  - Rebuild sqlite3 native module:
+    - `pnpm rebuild sqlite3`
+- Port `3000` already in use
+  - Stop previous dev process or use the URL shown in terminal (for example `http://localhost:3001`).
 
 ### Pipeline Integration
 **Example: GitLab Integration**
