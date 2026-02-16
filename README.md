@@ -13,17 +13,22 @@
 
 After integrating into the pipeline process, you gain the ability to control the deployment to test stands for your QA engineers. If a test stand is occupied by another QA engineer, the deployment to the occupied stand will be blocked. You can also switch the stand into smoke-test mode, and deployment for testers will not be possible.
 
-### Quick start
+### Local setup
 
-1. Install dependencies:
+#### Requirements
 
-```
+- Node.js 20+
+- pnpm 10+
+
+#### 1. Install dependencies
+
+```bash
 pnpm install
 ```
 
-2. Create local env file from template and set your Jira URL:
+#### 2. Configure env
 
-```
+```bash
 cp .env.example .env
 ```
 
@@ -40,25 +45,57 @@ Example:
 - with `JIRA_TASK_REPLACE_FROM=WX-` and `JIRA_TASK_REPLACE_TO=DEV-`
 - UI will show `DEV-123`
 
-3. Create the SQLite database:
+#### 3. Initialize database
 
-```
+Create local SQLite database and tables:
+
+```bash
 pnpm cli dbcreate
 ```
 
-4. Run the app:
+This command recreates the database from models (`sync({ force: true })`), so it removes existing local data.
 
-```
+#### 4. Run application
+
+```bash
 pnpm dev
 ```
 
-5. For a quick demonstration, simulate the operation of the CI by passing the user's name, email, and other data through a `curl` request to initiate the automatic creation of a user in the system.
+Open [http://localhost:3000](http://localhost:3000).
 
-```
-curl -XPOST -H "Content-type: application/json" -d '{ "repository": "backend", "user_name": "John Smit", "user_email": "john@company.org", "namespace": "myorg", "stand": "qa1", "branch": "infra/test" }' "http://localhost:3000/api/book"
+#### 5. Create first user via API
+
+Send a booking request (this creates namespace/user/repository/stand automatically if they do not exist):
+
+```bash
+curl -XPOST -H "Content-type: application/json" \
+  -d '{ "repository": "backend", "user_name": "John Smit", "user_email": "john@company.org", "namespace": "myorg", "stand": "qa1", "branch": "infra/test" }' \
+  "http://localhost:3000/api/book"
 ```
 
-6. Open http://localhost:3000 in your browser and enter `john@company.org` as the user for authentication. After that, the system will prompt you to set a password for this user.
+Expected response:
+
+```json
+"Success!"
+```
+
+After that, sign in with `john@company.org` on [http://localhost:3000](http://localhost:3000) and set password.
+
+#### 6. Production build check
+
+```bash
+pnpm build
+```
+
+### Troubleshooting
+
+- `SQLITE_ERROR: no such table: namespaces`
+  - Database is not initialized. Run `pnpm cli dbcreate` and restart `pnpm dev`.
+- `Could not locate the bindings file ... sqlite3`
+  - Rebuild sqlite3 native module:
+    - `pnpm rebuild sqlite3`
+- Port `3000` already in use
+  - Stop previous dev process or use the URL shown in terminal (for example `http://localhost:3001`).
 
 ### Pipeline Integration
 **Example: GitLab Integration**
