@@ -1,4 +1,3 @@
-import getConfig from "next/config"
 import Head from "next/head"
 import { useRouter } from "next/router"
 import { useState } from "react"
@@ -15,10 +14,8 @@ const Auth: NextPage = () => {
   const router = useRouter()
   const section = router.pathname.split("/")[1]
 
-  const { publicRuntimeConfig } = getConfig()
-
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const version = publicRuntimeConfig?.version
+  const version = process.env.NEXT_PUBLIC_APP_VERSION
 
   const onError = (error: string | null) => {
     setErrorMessage(error)
