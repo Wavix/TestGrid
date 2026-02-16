@@ -31,7 +31,8 @@ const standPatch = async (
 
   if (!payload) return NextResponse.json({ error: "Payload is required" }, { status: httpStatus.BAD_REQUEST })
 
-  const standId = Number(query.params.standId || 0)
+  const params = await query.params
+  const standId = Number(params.standId || 0)
   if (!standId) return NextResponse.json({ error: "Stand ID must be a number" }, { status: httpStatus.BAD_REQUEST })
 
   try {

@@ -21,7 +21,8 @@ const getUserDataAdmin = async (
   if (user instanceof Error) return NextResponse.json({ error: user.message }, { status: httpStatus.BAD_REQUEST })
   if (!user.is_admin) return NextResponse.json({ error: "Unauthorized" }, { status: httpStatus.FORBIDDEN })
 
-  const userId = Number(query.params.userId || 0)
+  const params = await query.params
+  const userId = Number(params.userId || 0)
   if (!userId)
     return NextResponse.json({ error: "User id must be a number" }, { status: httpStatus.INTERNAL_SERVER_ERROR })
 
@@ -47,7 +48,8 @@ const userUpdateAdmin = async (
 
   const payload = await getBodyPayload(request)
 
-  const userId = Number(query.params.userId || 0)
+  const params = await query.params
+  const userId = Number(params.userId || 0)
   if (!userId)
     return NextResponse.json({ error: "User id must be a number" }, { status: httpStatus.INTERNAL_SERVER_ERROR })
 

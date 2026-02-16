@@ -22,7 +22,8 @@ const getBookingHistoryById = async (
 
     if (!user.is_admin) return NextResponse.json({ error: "Unauthorized" }, { status: httpStatus.NOT_FOUND })
 
-    const userId = Number(query.params.userId || 0)
+    const params = await query.params
+    const userId = Number(params.userId || 0)
 
     if (!userId) return NextResponse.json({ error: "Booking id must be a number" }, { status: httpStatus.BAD_REQUEST })
 
