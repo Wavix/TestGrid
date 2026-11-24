@@ -25,6 +25,7 @@ export interface WorkloadRef {
 }
 
 export interface StandWorkloadItem extends WorkloadRef {
+  application: string | null
   desired: number
   ready: number
   saved_replicas: number | null
@@ -44,14 +45,20 @@ export interface StandPermissions {
   can_delete: boolean
 }
 
-export interface StandStateResponse extends StandPermissions {
+export interface StandResources {
+  cpu_used_cores: number | null
+  cpu_requested_cores: number | null
+  memory_used_gib: number | null
+  memory_requested_gib: number | null
+}
+
+export interface StandStateResponse extends StandPermissions, StandResources {
   access: StandAccess
   state: StandRuntimeState | null
   created_at: string | null
   expires_at: string | null
   urls: Array<string>
   nodes: Array<string>
-  memory_requested_gib: number | null
   workloads: Array<StandWorkloadItem>
   applications: Array<StandApplicationItem>
   warnings: Array<string>

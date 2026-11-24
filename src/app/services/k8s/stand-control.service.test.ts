@@ -405,16 +405,23 @@ describe("Stand control", () => {
         }
       }))
       prometheus.routes.set(routeKey("GET", "/api/v1/query"), request => {
-        const isMemory = request.query.get("query")?.startsWith("sum(")
-        const result = isMemory
-          ? [{ metric: {}, value: [0, String(2.5 * GIB)] }]
-          : [{ metric: { node: "worker-1" }, value: [0, "4"] }]
+        const query = request.query.get("query") || ""
+        const sample = (value: number) => [{ metric: {}, value: [0, String(value)] }]
+        const resultFor = (): Array<unknown> => {
+          if (query.includes("container_cpu_usage_seconds_total")) return sample(0.4249)
+          if (query.includes('resource="cpu"')) return sample(1.5)
+          if (query.includes("container_memory_working_set_bytes")) return sample(1.25 * GIB)
+          if (query.includes('resource="memory"')) return sample(2.5 * GIB)
+
+          return [{ metric: { node: "worker-1" }, value: [0, "4"] }]
+        }
+        const result = resultFor()
 
         return { status: 200, body: { status: "success", data: { resultType: "vector", result } } }
       })
     }
 
-    it("reports workloads, ArgoCD applications, memory, nodes and the namespace metadata", async () => {
+    it("reports workloads, ArgoCD applications, CPU and memory, nodes and the namespace metadata", async () => {
       registerStateRoutes()
       await serviceWith().scale(qa1, admin, ScaleAction.Stop, { kind: WorkloadKind.Deployment, name: "backend" })
 
@@ -429,11 +436,15 @@ describe("Stand control", () => {
         expires_at: "2026-02-01T00:00:00Z",
         urls: ["https://app.qa1.example.org", "https://api.qa1.example.org"],
         nodes: ["worker-1"],
+        cpu_used_cores: 0.42,
+        cpu_requested_cores: 1.5,
+        memory_used_gib: 1.25,
         memory_requested_gib: 2.5,
         workloads: [
           {
             kind: WorkloadKind.Deployment,
             name: "backend",
+            application: null,
             desired: 0,
             ready: 3,
             saved_replicas: 3,
@@ -442,6 +453,7 @@ describe("Stand control", () => {
           {
             kind: WorkloadKind.StatefulSet,
             name: "mysql",
+            application: null,
             desired: 1,
             ready: 0,
             saved_replicas: null,
@@ -450,6 +462,7 @@ describe("Stand control", () => {
           {
             kind: WorkloadKind.Deployment,
             name: "testgrid",
+            application: null,
             desired: 1,
             ready: 1,
             saved_replicas: null,
@@ -468,7 +481,10 @@ describe("Stand control", () => {
           .sort((a, b) => String(a).localeCompare(String(b)))
       ).toEqual([
         'count by (node) (kube_pod_info{namespace="qa1"})',
-        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="memory"})'
+        'sum(container_memory_working_set_bytes{namespace="qa1",container!=""})',
+        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="cpu"})',
+        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="memory"})',
+        'sum(rate(container_cpu_usage_seconds_total{namespace="qa1",container!=""}[5m]))'
       ])
     })
 
@@ -488,7 +504,7 @@ describe("Stand control", () => {
       expect(result.data.warnings.join()).toContain(NO_ACCESS_MESSAGE)
     })
 
-    it("keeps the state when Prometheus is down and reports why memory is missing", async () => {
+    it("keeps the state when Prometheus is down and reports why CPU and memory are missing", async () => {
       registerStateRoutes()
       prometheus.routes.clear()
 
@@ -496,11 +512,22 @@ describe("Stand control", () => {
 
       expect(result.success).toBe(true)
       if (!result.success) return
-      expect(result.data.memory_requested_gib).toBeNull()
-      expect(result.data.nodes).toEqual([])
+      expect(result.data).toMatchObject({
+        cpu_used_cores: null,
+        cpu_requested_cores: null,
+        memory_used_gib: null,
+        memory_requested_gib: null,
+        nodes: []
+      })
       expect(
-        result.data.warnings.some(warning => warning.includes("Prometheus memory") && warning.includes("404"))
-      ).toBe(true)
+        result.data.warnings.filter(warning => warning.startsWith("Prometheus") && warning.includes("404"))
+      ).toEqual([
+        expect.stringContaining("Prometheus nodes"),
+        expect.stringContaining("Prometheus CPU used"),
+        expect.stringContaining("Prometheus CPU requested"),
+        expect.stringContaining("Prometheus memory used"),
+        expect.stringContaining("Prometheus memory requested")
+      ])
     })
   })
 

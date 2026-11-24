@@ -7,7 +7,7 @@ import { StandKind } from "@/interfaces/stand.interface"
 import { ClusterErrorReason, ClusterRequestError, isForbidden } from "./http"
 
 import type { ClusterWorkload, StandClusterClient } from "./cluster.client"
-import type { MetricsClient } from "./prometheus.client"
+import type { MetricsClient, PrometheusSample } from "./prometheus.client"
 import type { StandAttributes } from "@/app/database/interfaces/stand.interface"
 import type { BaseUserResponse } from "@/interfaces/auth.interface"
 import type {
@@ -16,6 +16,7 @@ import type {
   ScaleResponse,
   StandApplicationItem,
   StandPermissions,
+  StandResources,
   StandStateResponse,
   StandWorkloadItem,
   WorkloadRef
@@ -36,7 +37,8 @@ export const NO_ACCESS_MESSAGE = "No access, re-run bin/dev stand up"
 
 const DEFAULT_START_REPLICAS = 1
 const BYTES_IN_GIB = 1024 ** 3
-const GIB_PRECISION = 100
+const CORES_IN_CORE = 1
+const VALUE_PRECISION = 100
 const DNS_LABEL = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/
 
 const errorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error))
@@ -56,6 +58,51 @@ const imageTag = (image: string): string => image.slice(image.lastIndexOf("/") +
 const isDefinitelyRejected = (error: Error): boolean =>
   error instanceof ClusterRequestError &&
   [ClusterErrorReason.Unauthorized, ClusterErrorReason.Forbidden, ClusterErrorReason.NotFound].includes(error.reason)
+
+interface ResourceQuery {
+  field: keyof StandResources
+  label: string
+  divisor: number
+  promql: (namespace: string) => string
+}
+
+const RESOURCE_QUERIES: Array<ResourceQuery> = [
+  {
+    field: "cpu_used_cores",
+    label: "CPU used",
+    divisor: CORES_IN_CORE,
+    promql: namespace => `sum(rate(container_cpu_usage_seconds_total{namespace="${namespace}",container!=""}[5m]))`
+  },
+  {
+    field: "cpu_requested_cores",
+    label: "CPU requested",
+    divisor: CORES_IN_CORE,
+    promql: namespace => `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="cpu"})`
+  },
+  {
+    field: "memory_used_gib",
+    label: "memory used",
+    divisor: BYTES_IN_GIB,
+    promql: namespace => `sum(container_memory_working_set_bytes{namespace="${namespace}",container!=""})`
+  },
+  {
+    field: "memory_requested_gib",
+    label: "memory requested",
+    divisor: BYTES_IN_GIB,
+    promql: namespace => `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="memory"})`
+  }
+]
+
+const roundedValue = (samples: Array<PrometheusSample>, divisor: number): number =>
+  Math.round(((samples[0]?.value || 0) / divisor) * VALUE_PRECISION) / VALUE_PRECISION
+
+const resourcesOf = (results: Array<Array<PrometheusSample> | Error>, warnings: Array<string>): StandResources =>
+  RESOURCE_QUERIES.reduce((resources, query, index) => {
+    const result = results[index]
+    if (result instanceof Error) warnings.push(`Prometheus ${query.label}: ${result.message}`)
+
+    return { ...resources, [query.field]: result instanceof Error ? null : roundedValue(result, query.divisor) }
+  }, {} as StandResources)
 
 const isSameWorkload = (a: WorkloadRef, b: WorkloadRef): boolean => a.kind === b.kind && a.name === b.name
 
@@ -90,11 +137,11 @@ export class StandControlService {
     if (!DNS_LABEL.test(stand.name)) return failure(`Invalid stand name ${stand.name}`, httpStatus.UNPROCESSABLE_ENTITY)
 
     const namespace = stand.name
-    const [standNamespace, workloads, applications, memory, nodes, saved, protectedRef] = await Promise.all([
+    const [standNamespace, workloads, applications, resourceResults, nodes, saved, protectedRef] = await Promise.all([
       this.deps.cluster.getStandNamespace(namespace),
       this.deps.cluster.listWorkloads(namespace),
       this.deps.cluster.listApplications(namespace),
-      this.deps.metrics.query(`sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="memory"})`),
+      Promise.all(RESOURCE_QUERIES.map(query => this.deps.metrics.query(query.promql(namespace)))),
       this.deps.metrics.query(`count by (node) (kube_pod_info{namespace="${namespace}"})`),
       DB.models.StandReplica.findAll({ where: { stand: namespace }, raw: true }),
       this.protectedWorkload(namespace)
@@ -113,17 +160,13 @@ export class StandControlService {
 
     if (protectedRef instanceof Error) warnings.push(`Own namespace unknown: ${protectedRef.message}`)
     if (applications instanceof Error) warnings.push(`ArgoCD: ${applications.message}`)
-    if (memory instanceof Error) warnings.push(`Prometheus memory: ${memory.message}`)
     if (nodes instanceof Error) warnings.push(`Prometheus nodes: ${nodes.message}`)
 
     const shared = {
       ...base,
+      ...resourcesOf(resourceResults, warnings),
       applications: applications instanceof Error ? [] : applications.map(app => this.toApplicationItem(app)),
-      nodes: nodes instanceof Error ? [] : nodes.map(sample => sample.labels.node).filter(Boolean),
-      memory_requested_gib:
-        memory instanceof Error
-          ? null
-          : Math.round(((memory[0]?.value || 0) / BYTES_IN_GIB) * GIB_PRECISION) / GIB_PRECISION
+      nodes: nodes instanceof Error ? [] : nodes.map(sample => sample.labels.node).filter(Boolean)
     }
 
     if (workloads instanceof Error) {
