@@ -1,5 +1,6 @@
-import { QuestionOutlineIcon } from "@chakra-ui/icons"
-import { Tooltip } from "@chakra-ui/react"
+import { LuCircleHelp } from "react-icons/lu"
+
+import { Portal, Tooltip } from "@chakra-ui/react"
 
 import style from "./style.module.scss"
 
@@ -16,9 +17,29 @@ export const HintLabel: FC<Props> = ({ value, hint }) => {
       <div>{value}</div>
       {hint && (
         <div className={style.infoWrapper}>
-          <Tooltip hasArrow label={hint} bg="black" color="white" fontSize={12} fontWeight={400} maxWidth={250}>
-            <QuestionOutlineIcon color="gray.500" />
-          </Tooltip>
+          <Tooltip.Root>
+            <Tooltip.Trigger asChild>
+              <span>
+                <LuCircleHelp color="gray" />
+              </span>
+            </Tooltip.Trigger>
+            <Portal>
+              <Tooltip.Positioner>
+                <Tooltip.Content
+                  css={{ "--tooltip-bg": "black" }}
+                  color="white"
+                  fontSize="12px"
+                  fontWeight={400}
+                  maxWidth="250px"
+                >
+                  <Tooltip.Arrow>
+                    <Tooltip.ArrowTip />
+                  </Tooltip.Arrow>
+                  {hint}
+                </Tooltip.Content>
+              </Tooltip.Positioner>
+            </Portal>
+          </Tooltip.Root>
         </div>
       )}
     </div>

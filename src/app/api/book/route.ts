@@ -115,7 +115,7 @@ const deploymentRequest = async (request: Request) => {
     }
 
     return NextResponse.json("1|Error")
-  } catch (error) {
+  } catch {
     return NextResponse.json("Success!")
   }
 }

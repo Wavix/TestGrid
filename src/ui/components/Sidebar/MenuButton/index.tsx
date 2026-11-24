@@ -1,6 +1,6 @@
 import classNames from "classnames"
 import { useRouter } from "next/router"
-import React, { type FC } from "react"
+import React, { type FC, type JSX } from "react"
 
 import style from "./style.module.scss"
 

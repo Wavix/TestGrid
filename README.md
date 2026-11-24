@@ -26,7 +26,26 @@ After integrating into the pipeline process, you gain the ability to control the
 pnpm install
 ```
 
-#### 2. Initialize database
+#### 2. Configure env
+
+```bash
+cp .env.example .env
+```
+
+`NEXT_PUBLIC_JIRA_URL` is used for Jira links in the UI.
+
+Optional (if you need to remap Jira task prefixes parsed from branch names):
+
+- `JIRA_TASK_REPLACE_FROM`
+- `JIRA_TASK_REPLACE_TO`
+
+Example:
+
+- branch contains `WX-123`
+- with `JIRA_TASK_REPLACE_FROM=WX-` and `JIRA_TASK_REPLACE_TO=DEV-`
+- UI will show `DEV-123`
+
+#### 3. Initialize database
 
 Create local SQLite database and tables:
 
@@ -36,7 +55,7 @@ pnpm cli dbcreate
 
 This command recreates the database from models (`sync({ force: true })`), so it removes existing local data.
 
-#### 3. Run application
+#### 4. Run application
 
 ```bash
 pnpm dev
@@ -44,7 +63,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-#### 4. Create first user via API
+#### 5. Create first user via API
 
 Send a booking request (this creates namespace/user/repository/stand automatically if they do not exist):
 
@@ -62,7 +81,7 @@ Expected response:
 
 After that, sign in with `john@company.org` on [http://localhost:3000](http://localhost:3000) and set password.
 
-#### 5. Production build check
+#### 6. Production build check
 
 ```bash
 pnpm build

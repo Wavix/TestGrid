@@ -24,6 +24,9 @@ const nextConfig = {
     ]
   },
   serverExternalPackages: ["sequelize", "sequelize-typescript"],
+  sassOptions: {
+    loadPaths: [__dirname]
+  },
   env: {
     NEXT_PUBLIC_APP_VERSION: version
   },

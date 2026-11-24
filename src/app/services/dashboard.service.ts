@@ -1,3 +1,5 @@
+import { config } from "@/config"
+
 import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
 import type { BookingAttributes } from "@/app/database/interfaces/booking.interface"
 import type { RepositoryAttributes } from "@/app/database/interfaces/repository.interface"
@@ -45,7 +47,17 @@ export class DashboardService {
     const regex = /([A-Za-z]+-\d+)/
     const match = branchName.match(regex)
 
-    if (match) return match[0].toUpperCase()
+    if (match) {
+      const jiraTaskName = match[0].toUpperCase()
+      const { jiraTaskReplaceFrom, jiraTaskReplaceTo } = config
+
+      if (jiraTaskReplaceFrom && jiraTaskReplaceTo) {
+        return jiraTaskName.replaceAll(jiraTaskReplaceFrom.toUpperCase(), jiraTaskReplaceTo.toUpperCase())
+      }
+
+      return jiraTaskName
+    }
+
     return null
   }
 }

@@ -15,7 +15,6 @@ export interface BookingHistoryAttributes {
 export interface BookingHistoryCreationAttributes extends Optional<BookingHistoryAttributes, "id" | "created_at"> {}
 
 export interface BookingHistoryInstance
-  extends Model<BookingHistoryAttributes, BookingHistoryCreationAttributes>,
-    BookingHistoryAttributes {}
+  extends Model<BookingHistoryAttributes, BookingHistoryCreationAttributes>, BookingHistoryAttributes {}
 
 export interface BookingHistoryModel extends ModelStatic<BookingHistoryInstance> {}

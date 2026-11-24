@@ -32,7 +32,7 @@ const viewNotifications = async (
       return NextResponse.json({ error: response.message }, { status: httpStatus.BAD_REQUEST })
 
     return NextResponse.json({ success: response })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Error while getting notifications" }, { status: httpStatus.BAD_REQUEST })
   }
 }

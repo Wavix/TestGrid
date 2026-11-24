@@ -1,18 +1,15 @@
-module.exports = {
+const { fixupConfigRules } = require("@eslint/compat")
+const { FlatCompat } = require("@eslint/eslintrc")
+const js = require("@eslint/js")
+const nextCoreWebVitals = require("eslint-config-next/core-web-vitals")
+
+const legacyConfig = {
   parser: "@typescript-eslint/parser",
   env: {
     "browser": true,
     "jest/globals": true
   },
   plugins: ["@typescript-eslint/eslint-plugin", "jest", "import", "unused-imports"],
-  extends: [
-    "airbnb",
-    "plugin:import/typescript",
-    "next/core-web-vitals",
-    "plugin:import/errors",
-    "plugin:import/warnings",
-    "prettier"
-  ],
   globals: {
     JSX: true,
     globalThis: true,
@@ -172,6 +169,8 @@ module.exports = {
     ],
     "react/jsx-no-constructed-context-values": "off",
     "react-hooks/rules-of-hooks": "error",
+    "react-hooks/set-state-in-effect": "off",
+    "react-hooks/immutability": "off",
     "import/no-extraneous-dependencies": "off"
   },
   settings: {
@@ -188,3 +187,39 @@ module.exports = {
     }
   ]
 }
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended
+})
+
+const pluginInstances = {}
+
+// Flat config rejects two instances of one plugin; compat and eslint-config-next each load their own
+const sharePluginInstances = configs =>
+  configs.map(config => {
+    if (!config.plugins) return config
+
+    const plugins = Object.fromEntries(
+      Object.entries(config.plugins).map(([name, plugin]) => {
+        pluginInstances[name] ??= plugin
+        return [name, pluginInstances[name]]
+      })
+    )
+
+    return { ...config, plugins }
+  })
+
+module.exports = [
+  {
+    ignores: [".next/**", "node_modules/**", "next-env.d.ts", "*.config.js", "jest.before.ts"]
+  },
+  ...fixupConfigRules(
+    sharePluginInstances([
+      ...compat.extends("airbnb", "plugin:import/typescript"),
+      ...nextCoreWebVitals,
+      ...compat.extends("plugin:import/errors", "plugin:import/warnings", "prettier"),
+      ...compat.config(legacyConfig)
+    ])
+  )
+]

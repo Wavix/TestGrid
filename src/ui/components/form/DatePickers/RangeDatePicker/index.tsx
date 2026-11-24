@@ -1,9 +1,8 @@
 import classNames from "classnames"
 import dayjs from "dayjs"
 import React, { useRef, useState } from "react"
-import ReactDatePicker, { type ReactDatePickerProps } from "react-datepicker"
-
-import { CloseIcon } from "@chakra-ui/icons"
+import ReactDatePicker from "react-datepicker"
+import { LuX } from "react-icons/lu"
 
 import style from "../style.module.scss"
 
@@ -34,9 +33,6 @@ interface Props {
   disabled?: boolean
 }
 
-const DatePicker = ReactDatePicker as React.JSXElementConstructor<ReactDatePickerProps<any, false>>
-const DatePickerRange = ReactDatePicker as React.JSXElementConstructor<ReactDatePickerProps<any, true>>
-
 const PLACEHOLDER = "Date filter"
 
 export const RangeDatePicker: FC<Props> = ({
@@ -62,18 +58,22 @@ export const RangeDatePicker: FC<Props> = ({
     onChange({ from: start, to: end })
   }
 
-  const onChangeHandlerSingle = (date: Date) => {
+  const onChangeHandlerSingle = (date: Date | null) => {
+    if (!date) return
+
     setOpen(false)
     onChange({ from: null, to: null, date })
   }
 
-  const onChangeHandlerMonth = (date: Date) => {
+  const onChangeHandlerMonth = (date: Date | null) => {
+    if (!date) return
+
     setOpen(false)
 
     onChange({ from: date, to: dayjs(date).endOf("month").toDate() })
   }
 
-  const onOutsideClick = (event: React.MouseEvent) => {
+  const onOutsideClick = (event: MouseEvent) => {
     if (event.target !== datePickerRef.current) setOpen(false)
   }
 
@@ -112,17 +112,22 @@ export const RangeDatePicker: FC<Props> = ({
         onClick={onOpen}
       >
         <span>{getLabel()}</span>
-        {startDate && !noReset && <CloseIcon className={style.closeIcon} onClick={onCloseHandler} />}
+        {startDate && !noReset && <LuX className={style.closeIcon} onClick={onCloseHandler} />}
       </div>
       {isOpen && (
         <div className={style.datePicker}>
           {single && !monthPicker && (
-            <DatePicker selected={signleDate} onChange={onChangeHandlerSingle} onClickOutside={onOutsideClick} inline />
+            <ReactDatePicker
+              selected={signleDate}
+              onChange={onChangeHandlerSingle}
+              onClickOutside={onOutsideClick}
+              inline
+            />
           )}
 
           {!single && !monthPicker && (
             <div className={style.calendarWrapper}>
-              <DatePickerRange
+              <ReactDatePicker
                 selected={startDate}
                 onChange={onChangeHandler}
                 startDate={startDate}
@@ -132,13 +137,13 @@ export const RangeDatePicker: FC<Props> = ({
                 inline
               >
                 {hasButtons && <PresetButtons onChange={onChangeHandler} buttonsVisible={buttonsVisible} />}
-              </DatePickerRange>
+              </ReactDatePicker>
             </div>
           )}
 
           {monthPicker && (
             <div className={classNames(style.calendarWrapper, style.monthPicker)}>
-              <DatePicker
+              <ReactDatePicker
                 selected={startDate}
                 onChange={onChangeHandlerMonth}
                 startDate={startDate}

@@ -11,7 +11,6 @@ export interface NotificationAttributes {
 export interface NotificationCreationAttributes extends Optional<NotificationAttributes, "id" | "created_at"> {}
 
 export interface NotificationInstance
-  extends Model<NotificationAttributes, NotificationCreationAttributes>,
-    NotificationAttributes {}
+  extends Model<NotificationAttributes, NotificationCreationAttributes>, NotificationAttributes {}
 
 export interface NotificationModel extends ModelStatic<NotificationInstance> {}

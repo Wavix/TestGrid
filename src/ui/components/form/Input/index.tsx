@@ -1,4 +1,4 @@
-import { Input as ChakraInput } from "@chakra-ui/input"
+import { Input as ChakraInput } from "@chakra-ui/react"
 
 import { HintLabel } from "../HintLabel"
 
@@ -35,13 +35,13 @@ export const Input: FC<Props> = ({
         value={value}
         color="black"
         backgroundColor={readOnly ? "gray.100" : "white"}
-        focusBorderColor="purple.400"
+        _focusVisible={{ borderColor: "purple.400", outlineColor: "purple.400" }}
         _placeholder={{ color: "grey" }}
         type={type || "text"}
         placeholder={placeholder}
         readOnly={readOnly}
         disabled={disabled}
-        isRequired={isRequired}
+        required={isRequired}
       />
     </div>
   )

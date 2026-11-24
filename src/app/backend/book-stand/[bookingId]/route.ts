@@ -23,7 +23,8 @@ const releaseStand = async (
 
   if (user instanceof Error) return NextResponse.json({ error: user.message }, { status: httpStatus.BAD_REQUEST })
 
-  const bookingId = Number(query.params.bookingId || 0)
+  const params = await query.params
+  const bookingId = Number(params.bookingId || 0)
   if (!bookingId) return NextResponse.json({ error: "Booking id must be a number" }, { status: httpStatus.BAD_REQUEST })
 
   try {
