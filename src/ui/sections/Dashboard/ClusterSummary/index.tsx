@@ -39,10 +39,16 @@ export const ClusterSummary: FC = () => {
     <div className={style.clusterSummary}>
       <span className={style.title}>Cluster</span>
       <span>
+        CPU used <b>{formatValue(resources.cpu_used_cores)} cores</b>
+      </span>
+      <span>
         CPU requested{" "}
         <b>
           {formatValue(resources.cpu_requested_cores)} / {formatValue(resources.cpu_allocatable_cores)} cores
         </b>
+      </span>
+      <span>
+        memory used <b>{formatValue(resources.memory_used_gib)} GiB</b>
       </span>
       <span>
         memory requested{" "}

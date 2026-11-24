@@ -538,6 +538,8 @@ describe("Stand control", () => {
         const valueFor = (): number => {
           if (query.includes('kube_node_status_allocatable{resource="cpu"}')) return 24
           if (query.includes('kube_node_status_allocatable{resource="memory"}')) return 96 * GIB
+          if (query.includes("container_cpu_usage_seconds_total")) return 4.126
+          if (query.includes("container_memory_working_set_bytes")) return 28.25 * GIB
           if (query.includes('resource="cpu"')) return 9.754
           return 36.5 * GIB
         }
@@ -554,8 +556,10 @@ describe("Stand control", () => {
       const result = await serviceWith().getClusterResources()
 
       expect(result).toEqual({
+        cpu_used_cores: 4.13,
         cpu_requested_cores: 9.75,
         cpu_allocatable_cores: 24,
+        memory_used_gib: 28.25,
         memory_requested_gib: 36.5,
         memory_allocatable_gib: 96,
         warnings: []
@@ -563,7 +567,9 @@ describe("Stand control", () => {
       expect(prometheus.received.map(request => request.query.get("query"))).toEqual(
         expect.arrayContaining([
           'sum(kube_pod_container_resource_requests{resource="cpu"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Running"}) == 1))',
-          'sum(kube_node_status_allocatable{resource="memory"})'
+          'sum(kube_node_status_allocatable{resource="memory"})',
+          'sum(rate(container_cpu_usage_seconds_total{container!=""}[5m]))',
+          'sum(container_memory_working_set_bytes{container!=""})'
         ])
       )
     })
@@ -572,14 +578,18 @@ describe("Stand control", () => {
       const result = await serviceWith().getClusterResources()
 
       expect(result).toMatchObject({
+        cpu_used_cores: null,
         cpu_requested_cores: null,
         cpu_allocatable_cores: null,
+        memory_used_gib: null,
         memory_requested_gib: null,
         memory_allocatable_gib: null
       })
       expect(result.warnings).toEqual([
+        expect.stringContaining("Prometheus cluster CPU used"),
         expect.stringContaining("Prometheus cluster CPU requested"),
         expect.stringContaining("Prometheus cluster CPU allocatable"),
+        expect.stringContaining("Prometheus cluster memory used"),
         expect.stringContaining("Prometheus cluster memory requested"),
         expect.stringContaining("Prometheus cluster memory allocatable")
       ])

@@ -53,8 +53,10 @@ export interface StandResources {
 }
 
 export interface ClusterResources {
+  cpu_used_cores: number | null
   cpu_requested_cores: number | null
   cpu_allocatable_cores: number | null
+  memory_used_gib: number | null
   memory_requested_gib: number | null
   memory_allocatable_gib: number | null
 }

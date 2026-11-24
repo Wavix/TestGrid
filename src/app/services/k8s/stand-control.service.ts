@@ -68,8 +68,16 @@ interface ResourceQuery<T> {
   promql: string
 }
 
+const namespaceScope = (namespace?: string): string => (namespace ? `namespace="${namespace}",` : "")
+
+const cpuUsed = (namespace?: string): string =>
+  `sum(rate(container_cpu_usage_seconds_total{${namespaceScope(namespace)}container!=""}[5m]))`
+
+const memoryUsed = (namespace?: string): string =>
+  `sum(container_memory_working_set_bytes{${namespaceScope(namespace)}container!=""})`
+
 const liveRequests = (resource: string, namespace?: string): string => {
-  const scope = namespace ? `namespace="${namespace}",` : ""
+  const scope = namespaceScope(namespace)
 
   return `sum(kube_pod_container_resource_requests{${scope}resource="${resource}"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{${scope}phase=~"Pending|Running"}) == 1))`
 }
@@ -79,14 +87,14 @@ const standResourceQueries = (namespace: string): Array<ResourceQuery<StandResou
     field: "cpu_used_cores",
     label: "CPU used",
     divisor: NO_SCALING,
-    promql: `sum(rate(container_cpu_usage_seconds_total{namespace="${namespace}",container!=""}[5m]))`
+    promql: cpuUsed(namespace)
   },
   { field: "cpu_requested_cores", label: "CPU requested", divisor: NO_SCALING, promql: liveRequests("cpu", namespace) },
   {
     field: "memory_used_gib",
     label: "memory used",
     divisor: BYTES_IN_GIB,
-    promql: `sum(container_memory_working_set_bytes{namespace="${namespace}",container!=""})`
+    promql: memoryUsed(namespace)
   },
   {
     field: "memory_requested_gib",
@@ -97,6 +105,7 @@ const standResourceQueries = (namespace: string): Array<ResourceQuery<StandResou
 ]
 
 const CLUSTER_RESOURCE_QUERIES: Array<ResourceQuery<ClusterResources>> = [
+  { field: "cpu_used_cores", label: "cluster CPU used", divisor: NO_SCALING, promql: cpuUsed() },
   { field: "cpu_requested_cores", label: "cluster CPU requested", divisor: NO_SCALING, promql: liveRequests("cpu") },
   {
     field: "cpu_allocatable_cores",
@@ -104,6 +113,7 @@ const CLUSTER_RESOURCE_QUERIES: Array<ResourceQuery<ClusterResources>> = [
     divisor: NO_SCALING,
     promql: 'sum(kube_node_status_allocatable{resource="cpu"})'
   },
+  { field: "memory_used_gib", label: "cluster memory used", divisor: BYTES_IN_GIB, promql: memoryUsed() },
   {
     field: "memory_requested_gib",
     label: "cluster memory requested",
