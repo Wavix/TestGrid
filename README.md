@@ -6,6 +6,7 @@
 - 📜 Booking history
 - 📊 Reservation metrics by testers
 - 🔀 Stand switching to Smoke-testing mode
+- ☸️ Kubernetes stands: one stand at a time with its state, CPU and memory, ArgoCD status and per-service stop/start, plus the cluster's CPU and memory (optional)
 - 💡 Intuitive web interface
 - 🔧 Support for multiple namespaces in your company (if you have several different development teams)
 
@@ -97,6 +98,24 @@ docker run -p 7045:7045 -v testgrid-data:/data testgrid
 ```
 
 The migrations alter tables of an existing `v1.0.0` database, so the container does not start on an empty volume: copy an existing `database.sqlite` into it first.
+
+### Releasing a new version
+
+TestGrid has no release pipeline of its own: a version is an image tag, and the Wavix QA cluster runs the tag pinned in the `wavix/mono` GitLab repository.
+
+1. In the feature PR, bump `version` in `package.json` (for example `1.3.0` → `1.4.0`).
+2. Merge the PR into `develop`. The `image` workflow publishes `ghcr.io/wavix/testgrid:<version>`.
+3. Check that the tag exists before going further:
+
+   ```bash
+   gh run list -R Wavix/TestGrid --workflow image.yml --limit 1
+   gh api /orgs/Wavix/packages/container/testgrid/versions --jq '.[].metadata.container.tags[]' | grep -x <version>
+   ```
+
+4. In `wavix/mono`, set `newTag: <version>` in `deploy/k8s/qa/apps/qa1/testgrid/kustomization.yaml` and the same tag in the image assertion of `services/ansible/ci/tests/test_testgrid_k8s.py`, then open a merge request to `main`.
+5. After that merge request is merged, the ArgoCD Application `qa1-testgrid` deploys the new image to `booking.wavix.dev`.
+
+Merge the mono request only after step 3 shows the tag. The Deployment uses the `Recreate` strategy, so a pin to a tag that does not exist yet stops the running pod and leaves the new one in `ImagePullBackOff`.
 
 ### Troubleshooting
 
