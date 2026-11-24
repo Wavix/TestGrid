@@ -87,6 +87,17 @@ After that, sign in with `john@company.org` on [http://localhost:3000](http://lo
 pnpm build
 ```
 
+### Docker image
+
+Every push to `develop` publishes `ghcr.io/wavix/testgrid` tagged `latest`, the `package.json` version and `sha-<short>`. The container listens on `7045`, keeps its database at `DATABASE_PATH` (`/data/database.sqlite` in the image) and applies pending migrations before it starts, so mount a persistent volume on `/data`. It runs as uid `10001`. `NEXT_PUBLIC_JIRA_URL` is a build argument: Next.js inlines it into the client bundle.
+
+```bash
+docker build -t testgrid .
+docker run -p 7045:7045 -v testgrid-data:/data testgrid
+```
+
+The migrations alter tables of an existing `v1.0.0` database, so the container does not start on an empty volume: copy an existing `database.sqlite` into it first.
+
 ### Troubleshooting
 
 - `SQLITE_ERROR: no such table: namespaces`

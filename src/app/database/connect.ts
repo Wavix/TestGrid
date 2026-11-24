@@ -7,7 +7,7 @@ import type { Db } from "./interfaces"
 
 const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: "database.sqlite",
+  storage: process.env.DATABASE_PATH || "database.sqlite",
   logging: false
 })
 
