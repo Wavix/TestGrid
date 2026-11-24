@@ -2,6 +2,7 @@ import Head from "next/head"
 import { useRouter } from "next/router"
 import { useEffect, useRef, useState, useContext } from "react"
 
+import { StandKind } from "@/app/backend/dashboard/interface"
 import { useFailureToast, useSuccessToast } from "@/hooks/toast"
 import { LoginContext } from "@/ui/LoginContext"
 import { updateStand } from "@/ui/api/admin"
@@ -9,11 +10,12 @@ import { getBooking, release } from "@/ui/api/booking"
 import { History } from "@/ui/components"
 import { Card, SectionWrapper } from "@/ui/components/layout"
 
+import { ClusterCapacity } from "./ClusterCapacity"
 import { DashboardFilters } from "./Filters"
 import { StandItem } from "./StandItem"
 import style from "./style.module.scss"
 
-import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
+import type { ClusterCapacity as Capacity, DashboardStandItem, StandAction } from "@/app/backend/dashboard/interface"
 import type { NextPage } from "next"
 
 const REFRESH_BOOKINGS_INTERVAL_SEC = 5
@@ -24,6 +26,7 @@ const DashboardPage: NextPage = () => {
   const failureToast = useFailureToast()
   const { user } = useContext(LoginContext)
   const [booking, setBooking] = useState<Array<DashboardStandItem>>([])
+  const [cluster, setCluster] = useState<Capacity | undefined>()
 
   const updateInterval = useRef<NodeJS.Timeout | null>(null)
 
@@ -38,7 +41,10 @@ const DashboardPage: NextPage = () => {
 
   const getBookings = async () => {
     const response = await getBooking()
+    if (response.error || !response.stands) return
+
     setBooking(response.stands)
+    setCluster(response.cluster)
   }
 
   const getComponentsFilter = (): Array<string> => {
@@ -77,6 +83,10 @@ const DashboardPage: NextPage = () => {
     getBookings()
   }
 
+  const onStandAction = (stand: DashboardStandItem, action: StandAction) => {
+    failureToast(`${action} ${stand.name} is not available yet`)
+  }
+
   const getList = (): Array<DashboardStandItem> => {
     if (!booking.length) return []
 
@@ -110,6 +120,26 @@ const DashboardPage: NextPage = () => {
     }, [])
   }
 
+  const stands = getList()
+  const personalStands = stands.filter(stand => stand.k8s?.kind === StandKind.Ephemeral)
+  const sharedStands = stands.filter(stand => stand.k8s?.kind !== StandKind.Ephemeral)
+
+  const renderStands = (items: Array<DashboardStandItem>) => (
+    <div className={style.standsLayout}>
+      {items.map(stand => (
+        <StandItem
+          user={user}
+          item={stand}
+          cluster={cluster}
+          key={stand.name}
+          onRelease={onRelease}
+          onChangeSmokeTestMode={onChangeSmokeTestMode}
+          onStandAction={onStandAction}
+        />
+      ))}
+    </div>
+  )
+
   return (
     <>
       <Head>
@@ -119,17 +149,17 @@ const DashboardPage: NextPage = () => {
       <SectionWrapper title="Dashboard" description={user?.namespace.name}>
         <DashboardFilters items={booking} />
 
-        <div className={style.standsLayout}>
-          {getList().map(stand => (
-            <StandItem
-              user={user}
-              item={stand}
-              key={stand.name}
-              onRelease={onRelease}
-              onChangeSmokeTestMode={onChangeSmokeTestMode}
-            />
-          ))}
-        </div>
+        {cluster && <ClusterCapacity cluster={cluster} stands={booking} />}
+
+        {personalStands.length > 0 && <h2 className={style.sectionTitle}>Shared stands</h2>}
+        {renderStands(sharedStands)}
+
+        {personalStands.length > 0 && (
+          <>
+            <h2 className={style.sectionTitle}>Personal stands</h2>
+            {renderStands(personalStands)}
+          </>
+        )}
 
         <Card.Container>
           <Card.Header>History</Card.Header>
