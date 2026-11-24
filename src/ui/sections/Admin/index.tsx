@@ -16,7 +16,7 @@ import type { UserListItem } from "@/interfaces/auth.interface"
 
 const TABLE_CSS = {
   "background": "transparent",
-  "color": "white",
+  "color": "var(--tg-foreground)",
   "& tr": {
     background: "transparent"
   },
@@ -145,7 +145,7 @@ const Admin = () => {
                         </Checkbox.Root>
                       </Table.Cell>
                       <Table.Cell>
-                        <Button variant="plain" color="white" fontWeight={700} onClick={() => onResetPassword(item.id)}>
+                        <Button unstyled className={style.resetButton} onClick={() => onResetPassword(item.id)}>
                           Reset password
                         </Button>
                       </Table.Cell>

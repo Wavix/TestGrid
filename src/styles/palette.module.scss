@@ -1,11 +1,21 @@
-$dark: #202634;
-$background: #191e2a;
-$green: #9efa4c;
-$tiffany-blue: #72fbf3;
-$red: #ea445a;
-$split-line: #303240;
-$yellow: #fef24e;
-$form-outline: #8b8c98;
+$dark: var(--tg-card);
+$background: var(--tg-background);
+$green: var(--tg-success);
+$tiffany-blue: var(--tg-foreground);
+$red: var(--tg-danger);
+$split-line: var(--tg-border);
+$yellow: var(--tg-warning);
+$form-outline: var(--tg-outline);
+
+$text: var(--tg-foreground);
+$muted-text: var(--tg-muted-foreground);
+$card-alt: var(--tg-card-alt);
+$card-accent: var(--tg-card-accent);
+$hover: var(--tg-hover);
+$link: var(--tg-link);
+$primary: var(--tg-primary);
+$primary-text: var(--tg-primary-foreground);
+$primary-hover: var(--tg-primary-hover);
 
 $dark-purple: #553c9a;
 $main-purple: #6b46c1;

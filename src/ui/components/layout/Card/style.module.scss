@@ -4,6 +4,7 @@
 .card {
   border-radius: 4px;
   background-color: $dark;
+  border: 1px solid $split-line;
   box-shadow: 3px 1px 9px -1px rgba(0, 0, 0, 0.05);
   padding: $content-padding;
 

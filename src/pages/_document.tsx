@@ -1,6 +1,8 @@
 import { Html, Head, Main, NextScript } from "next/document"
 import Script from "next/script"
 
+const APPLY_SAVED_THEME = `(function(){try{var t=localStorage.getItem("tg-theme");document.documentElement.dataset.tgTheme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.tgTheme="dark"}})()`
+
 const Document = () => {
   return (
     <Html lang="en">
@@ -16,6 +18,7 @@ const Document = () => {
         />
       </Head>
       <body>
+        <script dangerouslySetInnerHTML={{ __html: APPLY_SAVED_THEME }} />
         <Main />
         <NextScript />
       </body>
