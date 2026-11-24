@@ -3,6 +3,7 @@ import { NextResponse } from "next/server"
 
 import { BookingService } from "@/app/services/booking.service"
 import { DashboardService } from "@/app/services/dashboard.service"
+import { syncK8sStands } from "@/app/services/k8s/sync-stands"
 import { NamespaceService } from "@/app/services/namespace.service"
 import { RepositoryService } from "@/app/services/repository.service"
 import { StandService } from "@/app/services/stand.service"
@@ -28,6 +29,8 @@ const getStandsDashboard = async (request: Request): Promise<NextResponse<Dashbo
     const namespace = await namepsaceService.findNamespaceById(user.namespace.id)
     if (namespace instanceof Error)
       return NextResponse.json({ error: namespace.message }, { status: httpStatus.NOT_FOUND })
+
+    await syncK8sStands(namespace)
 
     const stands = await standService.findStandsByNamespaceId(namespace.id)
     if (stands instanceof Error) return NextResponse.json({ error: stands.message }, { status: httpStatus.BAD_REQUEST })

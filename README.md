@@ -97,6 +97,40 @@ pnpm build
 - Port `3000` already in use
   - Stop previous dev process or use the URL shown in terminal (for example `http://localhost:3001`).
 
+### Kubernetes stands (optional)
+
+TestGrid can read stands from a Kubernetes cluster. The feature is off by default: without `K8S_ENABLED=true` TestGrid behaves exactly as in `v1.0.0` and never calls the cluster.
+
+When enabled, TestGrid lists the cluster namespaces that carry the label `K8S_STAND_LABEL`. The label value is the stand name, so several namespaces with the same value form one stand:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa1
+  labels:
+    example.org/stand: qa1
+```
+
+- A stand found in the cluster appears on the dashboard of the `K8S_TESTGRID_NAMESPACE` namespace with `source: "k8s"`.
+- A stand that already exists with the same name becomes a Kubernetes stand and keeps its bookings.
+- A Kubernetes stand whose namespaces leave the cluster is removed together with its bookings. The booking history stays.
+- Stands created by `/api/book` or by hand stay `source: "manual"` and are never removed.
+- If the cluster cannot be read, the stands stay as they are and the error is logged.
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `K8S_ENABLED` | Yes | `true` turns the feature on |
+| `K8S_STAND_LABEL` | Yes | Label key on namespaces; the value is the stand name |
+| `K8S_TESTGRID_NAMESPACE` | Yes | TestGrid namespace that owns the cluster's stands |
+| `K8S_API_URL` | No | Defaults to `https://kubernetes.default.svc` |
+| `K8S_TOKEN_FILE` | No | Defaults to the pod's service account token; set it empty to send no token |
+| `K8S_CA_FILE` | No | Defaults to the pod's service account CA |
+
+Inside the cluster, the pod's service account needs permission to `list` `namespaces`. For local development run `kubectl proxy` and set `K8S_API_URL=http://127.0.0.1:8001` with `K8S_TOKEN_FILE=` empty.
+
+Upgrading from `v1.0.0`: run `pnpm migrate up` to add the `stands.source` column.
+
 ### Pipeline Integration
 **Example: GitLab Integration**
 

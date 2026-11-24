@@ -1,3 +1,5 @@
+import { StandSource } from "@/interfaces/stand.interface"
+
 import type { StandInstance, StandModel } from "../interfaces/stand.interface"
 import type { Models } from "@/app/database/interfaces"
 import type Sequelize from "sequelize"
@@ -27,6 +29,11 @@ export const Stand = (sequelize: Sequelize.Sequelize, DataTypes: typeof Sequeliz
       is_smoke_test: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
+        allowNull: false
+      },
+      source: {
+        type: DataTypes.STRING,
+        defaultValue: StandSource.Manual,
         allowNull: false
       }
     },
