@@ -12,8 +12,10 @@ export interface StandAttributes {
   owner: string | null
 }
 
-export interface StandCreationAttributes
-  extends Optional<StandAttributes, "id" | "created_at" | "is_smoke_test" | "source" | "kind" | "owner"> {}
+export interface StandCreationAttributes extends Optional<
+  StandAttributes,
+  "id" | "created_at" | "is_smoke_test" | "source" | "kind" | "owner"
+> {}
 
 export interface StandInstance extends Model<StandAttributes, StandCreationAttributes>, StandAttributes {}
 

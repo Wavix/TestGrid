@@ -13,7 +13,6 @@ export interface StandReplicaAttributes {
 export interface StandReplicaCreationAttributes extends Optional<StandReplicaAttributes, "id" | "created_at"> {}
 
 export interface StandReplicaInstance
-  extends Model<StandReplicaAttributes, StandReplicaCreationAttributes>,
-    StandReplicaAttributes {}
+  extends Model<StandReplicaAttributes, StandReplicaCreationAttributes>, StandReplicaAttributes {}
 
 export interface StandReplicaModel extends ModelStatic<StandReplicaInstance> {}

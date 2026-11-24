@@ -29,7 +29,8 @@ const CHIP_STATE_REFRESH_MS = 30_000
 
 const StandChip: FC<ChipProps> = ({ stand, isSelected, isHighlighted, onSelect }) => {
   const { state, error } = useStandState(stand.id, stand.source === StandSource.K8s, CHIP_STATE_REFRESH_MS)
-  const dotState = error || state?.access === StandAccess.Forbidden ? null : state?.state
+  const isStateUnknown = !!error || state?.access === StandAccess.Forbidden
+  const dotState = isStateUnknown ? null : state?.state
 
   return (
     <button
