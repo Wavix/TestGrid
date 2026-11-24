@@ -1,4 +1,4 @@
-import { StandKind } from "@/interfaces/stand.interface"
+import { StandKind, StandSource } from "@/interfaces/stand.interface"
 import { Switch } from "@/ui/components/form"
 import { Card } from "@/ui/components/layout"
 
@@ -6,23 +6,19 @@ import { K8sPanel } from "./K8sPanel"
 import { RepositoryItem } from "./RepositoryItem"
 import style from "./style.module.scss"
 
-import type { ClusterCapacity, DashboardStandItem, StandAction } from "@/app/backend/dashboard/interface"
+import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
 import type { User } from "@/ui/LoginContext"
 import type { FC } from "react"
 
 interface Props {
   item: DashboardStandItem
-  cluster?: ClusterCapacity
   user: User
   onRelease: (repositoryId: number) => void
   onChangeSmokeTestMode: (id: number, state: boolean) => void
-  onStandAction: (stand: DashboardStandItem, action: StandAction) => void
 }
 
-export const StandItem: FC<Props> = ({ user, item, cluster, onRelease, onChangeSmokeTestMode, onStandAction }) => {
+export const StandItem: FC<Props> = ({ user, item, onRelease, onChangeSmokeTestMode }) => {
   const isPersonal = item.kind === StandKind.Ephemeral
-  const isOwner = !!item.owner && item.owner === user?.email
-  const canManage = !!user?.is_admin || (isPersonal && isOwner)
 
   return (
     <div className={style.standItemWrapper}>
@@ -49,15 +45,7 @@ export const StandItem: FC<Props> = ({ user, item, cluster, onRelease, onChangeS
             Owner <b>{item.owner}</b>
           </div>
         )}
-        {item.k8s && cluster && (
-          <K8sPanel
-            info={item.k8s}
-            cluster={cluster}
-            canManage={canManage}
-            canDelete={isPersonal && canManage}
-            onAction={action => onStandAction(item, action)}
-          />
-        )}
+        {item.source === StandSource.K8s && <K8sPanel standId={item.id} isShared={!isPersonal} />}
         {!isPersonal && (
           <div className={style.standRepositories}>
             {item.repositories.map(repository => (

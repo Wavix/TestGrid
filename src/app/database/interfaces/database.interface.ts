@@ -4,6 +4,7 @@ import type { BookingModel } from "@/app/database/interfaces/booking.interface"
 import type { NamespaceModel } from "@/app/database/interfaces/namespace.interface"
 import type { NotificationModel } from "@/app/database/interfaces/notification.interface"
 import type { RepositoryModel } from "@/app/database/interfaces/repository.interface"
+import type { StandReplicaModel } from "@/app/database/interfaces/stand-replica.interface"
 import type { StandModel } from "@/app/database/interfaces/stand.interface"
 import type { Sequelize } from "sequelize"
 
@@ -15,6 +16,7 @@ export interface Models {
   Namespace: NamespaceModel
   BookingHistory: BookingHistoryModel
   Notification: NotificationModel
+  StandReplica: StandReplicaModel
 }
 
 export interface Db {
