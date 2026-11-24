@@ -52,6 +52,17 @@ export interface StandResources {
   memory_requested_gib: number | null
 }
 
+export interface ClusterResources {
+  cpu_requested_cores: number | null
+  cpu_allocatable_cores: number | null
+  memory_requested_gib: number | null
+  memory_allocatable_gib: number | null
+}
+
+export interface ClusterResourcesResponse extends ClusterResources {
+  warnings: Array<string>
+}
+
 export interface StandStateResponse extends StandPermissions, StandResources {
   access: StandAccess
   state: StandRuntimeState | null

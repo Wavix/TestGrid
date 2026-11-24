@@ -11,6 +11,8 @@ import type { MetricsClient, PrometheusSample } from "./prometheus.client"
 import type { StandAttributes } from "@/app/database/interfaces/stand.interface"
 import type { BaseUserResponse } from "@/interfaces/auth.interface"
 import type {
+  ClusterResources,
+  ClusterResourcesResponse,
   DeleteStandResponse,
   ScaleFailure,
   ScaleResponse,
@@ -59,53 +61,77 @@ const isDefinitelyRejected = (error: Error): boolean =>
   error instanceof ClusterRequestError &&
   [ClusterErrorReason.Unauthorized, ClusterErrorReason.Forbidden, ClusterErrorReason.NotFound].includes(error.reason)
 
-interface ResourceQuery {
-  field: keyof StandResources
+interface ResourceQuery<T> {
+  field: keyof T
   label: string
   divisor: number
-  promql: (namespace: string) => string
+  promql: string
 }
 
-const liveRequests = (namespace: string, resource: string): string =>
-  `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="${resource}"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{namespace="${namespace}",phase=~"Pending|Running"}) == 1))`
+const liveRequests = (resource: string, namespace?: string): string => {
+  const scope = namespace ? `namespace="${namespace}",` : ""
 
-const RESOURCE_QUERIES: Array<ResourceQuery> = [
+  return `sum(kube_pod_container_resource_requests{${scope}resource="${resource}"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{${scope}phase=~"Pending|Running"}) == 1))`
+}
+
+const standResourceQueries = (namespace: string): Array<ResourceQuery<StandResources>> => [
   {
     field: "cpu_used_cores",
     label: "CPU used",
     divisor: NO_SCALING,
-    promql: namespace => `sum(rate(container_cpu_usage_seconds_total{namespace="${namespace}",container!=""}[5m]))`
+    promql: `sum(rate(container_cpu_usage_seconds_total{namespace="${namespace}",container!=""}[5m]))`
   },
-  {
-    field: "cpu_requested_cores",
-    label: "CPU requested",
-    divisor: NO_SCALING,
-    promql: namespace => liveRequests(namespace, "cpu")
-  },
+  { field: "cpu_requested_cores", label: "CPU requested", divisor: NO_SCALING, promql: liveRequests("cpu", namespace) },
   {
     field: "memory_used_gib",
     label: "memory used",
     divisor: BYTES_IN_GIB,
-    promql: namespace => `sum(container_memory_working_set_bytes{namespace="${namespace}",container!=""})`
+    promql: `sum(container_memory_working_set_bytes{namespace="${namespace}",container!=""})`
   },
   {
     field: "memory_requested_gib",
     label: "memory requested",
     divisor: BYTES_IN_GIB,
-    promql: namespace => liveRequests(namespace, "memory")
+    promql: liveRequests("memory", namespace)
+  }
+]
+
+const CLUSTER_RESOURCE_QUERIES: Array<ResourceQuery<ClusterResources>> = [
+  { field: "cpu_requested_cores", label: "cluster CPU requested", divisor: NO_SCALING, promql: liveRequests("cpu") },
+  {
+    field: "cpu_allocatable_cores",
+    label: "cluster CPU allocatable",
+    divisor: NO_SCALING,
+    promql: 'sum(kube_node_status_allocatable{resource="cpu"})'
+  },
+  {
+    field: "memory_requested_gib",
+    label: "cluster memory requested",
+    divisor: BYTES_IN_GIB,
+    promql: liveRequests("memory")
+  },
+  {
+    field: "memory_allocatable_gib",
+    label: "cluster memory allocatable",
+    divisor: BYTES_IN_GIB,
+    promql: 'sum(kube_node_status_allocatable{resource="memory"})'
   }
 ]
 
 const roundedValue = (samples: Array<PrometheusSample>, divisor: number): number =>
   Math.round(((samples[0]?.value || 0) / divisor) * VALUE_PRECISION) / VALUE_PRECISION
 
-const resourcesOf = (results: Array<Array<PrometheusSample> | Error>, warnings: Array<string>): StandResources =>
-  RESOURCE_QUERIES.reduce((resources, query, index) => {
+const resourcesOf = <T>(
+  queries: Array<ResourceQuery<T>>,
+  results: Array<Array<PrometheusSample> | Error>,
+  warnings: Array<string>
+): T =>
+  queries.reduce((resources, query, index) => {
     const result = results[index]
     if (result instanceof Error) warnings.push(`Prometheus ${query.label}: ${result.message}`)
 
     return { ...resources, [query.field]: result instanceof Error ? null : roundedValue(result, query.divisor) }
-  }, {} as StandResources)
+  }, {} as T)
 
 const isSameWorkload = (a: WorkloadRef, b: WorkloadRef): boolean => a.kind === b.kind && a.name === b.name
 
@@ -136,15 +162,23 @@ export class StandControlService {
     }
   }
 
+  public async getClusterResources(): Promise<ClusterResourcesResponse> {
+    const results = await Promise.all(CLUSTER_RESOURCE_QUERIES.map(query => this.deps.metrics.query(query.promql)))
+    const warnings: Array<string> = []
+
+    return { ...resourcesOf(CLUSTER_RESOURCE_QUERIES, results, warnings), warnings }
+  }
+
   public async getState(stand: StandAttributes, user: BaseUserResponse): Promise<ControlResult<StandStateResponse>> {
     if (!DNS_LABEL.test(stand.name)) return failure(`Invalid stand name ${stand.name}`, httpStatus.UNPROCESSABLE_ENTITY)
 
     const namespace = stand.name
+    const resourceQueries = standResourceQueries(namespace)
     const [standNamespace, workloads, applications, resourceResults, nodes, saved, protectedRef] = await Promise.all([
       this.deps.cluster.getStandNamespace(namespace),
       this.deps.cluster.listWorkloads(namespace),
       this.deps.cluster.listApplications(namespace),
-      Promise.all(RESOURCE_QUERIES.map(query => this.deps.metrics.query(query.promql(namespace)))),
+      Promise.all(resourceQueries.map(query => this.deps.metrics.query(query.promql))),
       this.deps.metrics.query(`count by (node) (kube_pod_info{namespace="${namespace}"})`),
       DB.models.StandReplica.findAll({ where: { stand: namespace }, raw: true }),
       this.protectedWorkload(namespace)
@@ -167,7 +201,7 @@ export class StandControlService {
 
     const shared = {
       ...base,
-      ...resourcesOf(resourceResults, warnings),
+      ...resourcesOf(resourceQueries, resourceResults, warnings),
       applications: applications instanceof Error ? [] : applications.map(app => this.toApplicationItem(app)),
       nodes: nodes instanceof Error ? [] : nodes.map(sample => sample.labels.node).filter(Boolean)
     }

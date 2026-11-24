@@ -531,6 +531,61 @@ describe("Stand control", () => {
     })
   })
 
+  describe("cluster resources", () => {
+    it("reports requested against allocatable CPU and memory across the cluster", async () => {
+      prometheus.routes.set(routeKey("GET", "/api/v1/query"), request => {
+        const query = request.query.get("query") || ""
+        const valueFor = (): number => {
+          if (query.includes('kube_node_status_allocatable{resource="cpu"}')) return 24
+          if (query.includes('kube_node_status_allocatable{resource="memory"}')) return 96 * GIB
+          if (query.includes('resource="cpu"')) return 9.754
+          return 36.5 * GIB
+        }
+
+        return {
+          status: 200,
+          body: {
+            status: "success",
+            data: { resultType: "vector", result: [{ metric: {}, value: [0, String(valueFor())] }] }
+          }
+        }
+      })
+
+      const result = await serviceWith().getClusterResources()
+
+      expect(result).toEqual({
+        cpu_requested_cores: 9.75,
+        cpu_allocatable_cores: 24,
+        memory_requested_gib: 36.5,
+        memory_allocatable_gib: 96,
+        warnings: []
+      })
+      expect(prometheus.received.map(request => request.query.get("query"))).toEqual(
+        expect.arrayContaining([
+          'sum(kube_pod_container_resource_requests{resource="cpu"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Running"}) == 1))',
+          'sum(kube_node_status_allocatable{resource="memory"})'
+        ])
+      )
+    })
+
+    it("reports each missing cluster value when Prometheus is down", async () => {
+      const result = await serviceWith().getClusterResources()
+
+      expect(result).toMatchObject({
+        cpu_requested_cores: null,
+        cpu_allocatable_cores: null,
+        memory_requested_gib: null,
+        memory_allocatable_gib: null
+      })
+      expect(result.warnings).toEqual([
+        expect.stringContaining("Prometheus cluster CPU requested"),
+        expect.stringContaining("Prometheus cluster CPU allocatable"),
+        expect.stringContaining("Prometheus cluster memory requested"),
+        expect.stringContaining("Prometheus cluster memory allocatable")
+      ])
+    })
+  })
+
   describe("delete", () => {
     const deleteRequests = () =>
       k8s.received.filter(request => request.method === "DELETE").map(request => request.path)

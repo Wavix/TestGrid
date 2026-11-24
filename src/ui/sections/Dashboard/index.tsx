@@ -9,6 +9,7 @@ import { getBooking, release } from "@/ui/api/booking"
 import { History } from "@/ui/components"
 import { Card, SectionWrapper } from "@/ui/components/layout"
 
+import { ClusterSummary } from "./ClusterSummary"
 import { DashboardFilters } from "./Filters"
 import { StandSwitcher } from "./StandSwitcher"
 import { StandView } from "./StandView"
@@ -114,6 +115,8 @@ const DashboardPage: NextPage = () => {
       </Head>
 
       <SectionWrapper title="Dashboard" description={user?.namespace.name}>
+        <ClusterSummary />
+
         <StandSwitcher
           stands={stands}
           selectedName={selectedStand?.name}
