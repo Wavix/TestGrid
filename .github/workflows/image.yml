@@ -18,6 +18,18 @@ jobs:
         id: version
         run: echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
 
+      - name: Check whether the version is already published
+        id: published
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh api "/orgs/wavix/packages/container/testgrid/versions" --paginate --jq '.[].metadata.container.tags[]' 2>/dev/null \
+            | grep -qx "${{ steps.version.outputs.version }}"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -35,7 +47,7 @@ jobs:
           images: ghcr.io/wavix/testgrid
           tags: |
             type=raw,value=latest
-            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.version }},enable=${{ steps.published.outputs.exists == 'false' }}
             type=sha,format=short
 
       - name: Build and push image

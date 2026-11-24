@@ -89,7 +89,7 @@ pnpm build
 
 ### Docker image
 
-Every push to `develop` publishes `ghcr.io/wavix/testgrid` tagged `latest`, the `package.json` version and `sha-<short>`. The container listens on `7045`, keeps its database at `DATABASE_PATH` (`/data/database.sqlite` in the image) and applies pending migrations before it starts, so mount a persistent volume on `/data`. It runs as uid `10001`. `NEXT_PUBLIC_JIRA_URL` is a build argument: Next.js inlines it into the client bundle.
+Every push to `develop` publishes `ghcr.io/wavix/testgrid` tagged `latest` and `sha-<short>`, plus the `package.json` version the first time that version is pushed; a later push never moves a version tag, so bump the version to publish a new one. The container listens on `7045`, keeps its database at `DATABASE_PATH` (`/data/database.sqlite` in the image) and applies pending migrations before it starts, so mount a persistent volume on `/data`. It runs as uid `10001`. `NEXT_PUBLIC_JIRA_URL` is a build argument: Next.js inlines it into the client bundle.
 
 ```bash
 docker build -t testgrid .
