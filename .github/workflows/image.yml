@@ -4,6 +4,10 @@ on:
   push:
     branches: [develop]
 
+concurrency:
+  group: image
+  cancel-in-progress: false
+
 jobs:
   build-and-push-image:
     name: Build & Push Docker image to GHCR
@@ -23,11 +27,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if gh api "/orgs/wavix/packages/container/testgrid/versions" --paginate --jq '.[].metadata.container.tags[]' 2>/dev/null \
-            | grep -qx "${{ steps.version.outputs.version }}"; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-          else
+          if tags=$(gh api "/orgs/wavix/packages/container/testgrid/versions" --paginate --jq '.[].metadata.container.tags[]' 2>err.txt); then
+            if printf '%s\n' "$tags" | grep -qFx "${{ steps.version.outputs.version }}"; then
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+            fi
+          elif grep -q "HTTP 404" err.txt; then
             echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            cat err.txt >&2
+            exit 1
           fi
 
       - name: Set up Docker Buildx
