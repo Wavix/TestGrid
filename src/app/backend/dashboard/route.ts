@@ -43,7 +43,7 @@ const getStandsDashboard = async (request: Request): Promise<NextResponse<Dashbo
       { stands: dashboardService.getDashboard(stands, books, repositories, user) },
       { status: httpStatus.OK }
     )
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Can't get dashboard" }, { status: httpStatus.BAD_REQUEST })
   }
 }

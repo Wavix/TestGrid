@@ -3,7 +3,7 @@ import Head from "next/head"
 import { useRouter } from "next/router"
 import React, { useContext, useEffect, useState } from "react"
 
-import { Button, Checkbox, Table, TableContainer, Tbody, Td, Th, Thead, Tr, Stack, Skeleton } from "@chakra-ui/react"
+import { Button, Checkbox, Table, Stack, Skeleton } from "@chakra-ui/react"
 
 import { useFailureToast, useSuccessToast } from "@/hooks/toast"
 import { LoginContext } from "@/ui/LoginContext"
@@ -13,6 +13,29 @@ import { Card, SectionWrapper } from "@/ui/components/layout"
 import style from "./style.module.scss"
 
 import type { UserListItem } from "@/interfaces/auth.interface"
+
+const TABLE_CSS = {
+  "background": "transparent",
+  "color": "white",
+  "& tr": {
+    background: "transparent"
+  },
+  "& th, & td": {
+    background: "transparent",
+    border: "none",
+    color: "inherit",
+    paddingInline: "24px"
+  },
+  "& th": {
+    fontSize: "12px",
+    fontWeight: 700,
+    letterSpacing: "0.05em",
+    textTransform: "uppercase"
+  },
+  "& td": {
+    paddingBlock: "24px"
+  }
+}
 
 const Admin = () => {
   const successToast = useSuccessToast()
@@ -63,60 +86,74 @@ const Admin = () => {
       <SectionWrapper title="Admin" description={`User management area for ${currentUser?.namespace.name} namespace`}>
         <Card.Container>
           {isLoading ? (
-            <Stack padding={4} spacing={1}>
+            <Stack padding={4} gap={1}>
               {[...Array(4)].map((_, index) => (
-                <Skeleton key={index} height="73px" fadeDuration={1} opacity={0.1} />
+                <Skeleton key={index} height="73px" opacity={0.1} />
               ))}
             </Stack>
           ) : (
-            <TableContainer>
-              <Table variant="striped" colorScheme="blackAlpha">
-                <Thead>
-                  <Tr className={style.tableHeader}>
-                    <Th>ID</Th>
-                    <Th>Name</Th>
-                    <Th>Email</Th>
-                    <Th>Active</Th>
-                    <Th>Admin</Th>
-                    <Th>Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
+            <Table.ScrollArea>
+              <Table.Root css={TABLE_CSS}>
+                <Table.Header>
+                  <Table.Row className={style.tableHeader}>
+                    <Table.ColumnHeader>ID</Table.ColumnHeader>
+                    <Table.ColumnHeader>Name</Table.ColumnHeader>
+                    <Table.ColumnHeader>Email</Table.ColumnHeader>
+                    <Table.ColumnHeader>Active</Table.ColumnHeader>
+                    <Table.ColumnHeader>Admin</Table.ColumnHeader>
+                    <Table.ColumnHeader>Actions</Table.ColumnHeader>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
                   {users.map(item => (
-                    <Tr key={item.id} className={style.tableItem}>
-                      <Td>{item.id}</Td>
-                      <Td className={classNames({ [style.admin]: item.is_admin, [style.blocked]: !item.is_active })}>
+                    <Table.Row key={item.id} className={style.tableItem}>
+                      <Table.Cell>{item.id}</Table.Cell>
+                      <Table.Cell
+                        className={classNames({ [style.admin]: item.is_admin, [style.blocked]: !item.is_active })}
+                      >
                         {item.name}
-                      </Td>
-                      <Td>
+                      </Table.Cell>
+                      <Table.Cell>
                         <span className={style.email} onClick={() => onUserRedirectHandler(item.id)}>
                           {item.email}
                         </span>
-                      </Td>
-                      <Td>
-                        <Checkbox
-                          onChange={() => onChangeCheckbox(item, "is_active")}
-                          isChecked={item.is_active}
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Checkbox.Root
+                          colorPalette="blue"
+                          onCheckedChange={() => onChangeCheckbox(item, "is_active")}
+                          checked={item.is_active}
                           disabled={item.id === currentUser?.id}
-                        />
-                      </Td>
-                      <Td>
-                        <Checkbox
-                          onChange={() => onChangeCheckbox(item, "is_admin")}
-                          isChecked={item.is_admin}
+                        >
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control>
+                            <Checkbox.Indicator />
+                          </Checkbox.Control>
+                        </Checkbox.Root>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Checkbox.Root
+                          colorPalette="blue"
+                          onCheckedChange={() => onChangeCheckbox(item, "is_admin")}
+                          checked={item.is_admin}
                           disabled={item.id === currentUser?.id}
-                        />
-                      </Td>
-                      <Td>
-                        <Button colorScheme="telegram" onClick={() => onResetPassword(item.id)}>
+                        >
+                          <Checkbox.HiddenInput />
+                          <Checkbox.Control>
+                            <Checkbox.Indicator />
+                          </Checkbox.Control>
+                        </Checkbox.Root>
+                      </Table.Cell>
+                      <Table.Cell>
+                        <Button variant="plain" color="white" fontWeight={700} onClick={() => onResetPassword(item.id)}>
                           Reset password
                         </Button>
-                      </Td>
-                    </Tr>
+                      </Table.Cell>
+                    </Table.Row>
                   ))}
-                </Tbody>
-              </Table>
-            </TableContainer>
+                </Table.Body>
+              </Table.Root>
+            </Table.ScrollArea>
           )}
         </Card.Container>
       </SectionWrapper>

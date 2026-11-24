@@ -44,12 +44,15 @@ export const Sidebar: FC = () => {
       <div className={style.bottom}>
         <Notifications />
         <MenuButton content={<LogoutIcon />} onClick={logOut} />
-        <Avatar
+        <Avatar.Root
           size="sm"
-          name={user?.name}
+          colorPalette="pink"
+          variant="solid"
           className={style.avatar}
           onClick={() => router.push("/profile", undefined, { shallow: true })}
-        />
+        >
+          <Avatar.Fallback name={user?.name} />
+        </Avatar.Root>
       </div>
     </div>
   )

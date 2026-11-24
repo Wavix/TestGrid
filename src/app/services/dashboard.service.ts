@@ -1,9 +1,10 @@
+import { config } from "@/config"
+
 import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
 import type { BookingAttributes } from "@/app/database/interfaces/booking.interface"
 import type { RepositoryAttributes } from "@/app/database/interfaces/repository.interface"
 import type { StandAttributes } from "@/app/database/interfaces/stand.interface"
 import type { UserAttributes } from "@/app/database/interfaces/user.interface"
-import { config } from "@/config"
 import type { BaseUserResponse } from "@/interfaces/auth.interface"
 
 export class DashboardService {
