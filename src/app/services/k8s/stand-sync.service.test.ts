@@ -1,13 +1,16 @@
 import { DB } from "@/app/database"
 import { destroy } from "@/helpers/jest"
-import { StandSource } from "@/interfaces/stand.interface"
+import { StandKind, StandSource } from "@/interfaces/stand.interface"
 
 import { StandSyncService } from "./stand-sync.service"
 
-import type { ClusterClient } from "./cluster.client"
+import type { ClusterClient, ClusterStand } from "./cluster.client"
 
-const clusterWith = (result: Array<string> | Error): ClusterClient => ({
-  listStandNames: async () => result
+const shared = (name: string): ClusterStand => ({ name, kind: StandKind.Permanent, owner: null })
+
+const clusterWith = (result: Array<string | ClusterStand> | Error): ClusterClient => ({
+  listStands: async () =>
+    result instanceof Error ? result : result.map(stand => (typeof stand === "string" ? shared(stand) : stand))
 })
 
 const standsBySource = async (namespaceId: number): Promise<Record<string, string>> => {
@@ -71,6 +74,31 @@ describe("Kubernetes stand sync", () => {
 
     expect(result).toBeInstanceOf(Error)
     expect(await standsBySource(namespaceId)).toEqual({ "sync-qa1": StandSource.K8s })
+  })
+
+  it("stores the kind and owner of a personal stand and follows later changes", async () => {
+    const personal = { name: "sync-dev", kind: StandKind.Ephemeral, owner: "ann@example.org" }
+    await new StandSyncService(clusterWith([personal])).syncNamespaceStands(namespaceId)
+
+    const created = await DB.models.Stand.findOne({ where: { name: "sync-dev", namespace_id: namespaceId } })
+    expect(created?.kind).toBe(StandKind.Ephemeral)
+    expect(created?.owner).toBe("ann@example.org")
+
+    await new StandSyncService(clusterWith([{ ...personal, owner: "john@example.org" }])).syncNamespaceStands(
+      namespaceId
+    )
+
+    const updated = await DB.models.Stand.findOne({ where: { name: "sync-dev", namespace_id: namespaceId } })
+    expect(updated?.id).toBe(created?.id)
+    expect(updated?.owner).toBe("john@example.org")
+  })
+
+  it("keeps a stand without a kind label permanent and without an owner", async () => {
+    await new StandSyncService(clusterWith(["sync-qa1"])).syncNamespaceStands(namespaceId)
+
+    const stand = await DB.models.Stand.findOne({ where: { name: "sync-qa1", namespace_id: namespaceId } })
+    expect(stand?.kind).toBe(StandKind.Permanent)
+    expect(stand?.owner).toBeNull()
   })
 
   it("leaves another namespace's stands alone", async () => {

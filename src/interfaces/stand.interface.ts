@@ -3,6 +3,11 @@ export enum StandSource {
   K8s = "k8s"
 }
 
+export enum StandKind {
+  Permanent = "permanent",
+  Ephemeral = "ephemeral"
+}
+
 export interface StandUpdateResponse {
   stand: StandItem
 }
@@ -14,4 +19,6 @@ export interface StandItem {
   created_at: Date
   is_smoke_test: boolean
   source: StandSource
+  kind: StandKind
+  owner: string | null
 }

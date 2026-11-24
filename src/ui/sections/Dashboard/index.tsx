@@ -2,8 +2,8 @@ import Head from "next/head"
 import { useRouter } from "next/router"
 import { useEffect, useRef, useState, useContext } from "react"
 
-import { StandKind } from "@/app/backend/dashboard/interface"
 import { useFailureToast, useSuccessToast } from "@/hooks/toast"
+import { StandKind } from "@/interfaces/stand.interface"
 import { LoginContext } from "@/ui/LoginContext"
 import { updateStand } from "@/ui/api/admin"
 import { getBooking, release } from "@/ui/api/booking"
@@ -121,8 +121,8 @@ const DashboardPage: NextPage = () => {
   }
 
   const stands = getList()
-  const personalStands = stands.filter(stand => stand.k8s?.kind === StandKind.Ephemeral)
-  const sharedStands = stands.filter(stand => stand.k8s?.kind !== StandKind.Ephemeral)
+  const personalStands = stands.filter(stand => stand.kind === StandKind.Ephemeral)
+  const sharedStands = stands.filter(stand => stand.kind !== StandKind.Ephemeral)
 
   const renderStands = (items: Array<DashboardStandItem>) => (
     <div className={style.standsLayout}>

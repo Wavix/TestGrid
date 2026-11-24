@@ -9,6 +9,8 @@ import type { K8sConfig } from "@/config"
 import type { AddressInfo } from "net"
 
 const STAND_LABEL = "example.org/stand"
+const KIND_LABEL = "example.org/stand-kind"
+const OWNER_ANNOTATION = "example.org/stand-owner"
 
 interface ReceivedRequest {
   url: string
@@ -40,14 +42,22 @@ const optionsFor = (apiUrl: string, tokenFile = ""): K8sConfig => ({
   enabled: true,
   standLabel: STAND_LABEL,
   testgridNamespace: "myorg",
+  kindLabel: KIND_LABEL,
+  ownerAnnotation: OWNER_ANNOTATION,
   apiUrl,
   tokenFile,
   caFile: ""
 })
 
-const namespace = (name: string, stand?: string) => ({
-  metadata: { name, labels: stand ? { [STAND_LABEL]: stand } : {} }
+const namespace = (name: string, stand?: string, kind?: string, owner?: string) => ({
+  metadata: {
+    name,
+    labels: { ...(stand && { [STAND_LABEL]: stand }), ...(kind && { [KIND_LABEL]: kind }) },
+    annotations: owner ? { [OWNER_ANNOTATION]: owner } : {}
+  }
 })
+
+const sharedStand = (name: string) => ({ name, kind: "permanent", owner: null })
 
 describe("Kubernetes cluster client", () => {
   it("groups namespaces that share a stand label value into one stand", async () => {
@@ -55,12 +65,27 @@ describe("Kubernetes cluster client", () => {
       items: [namespace("qa2", "qa2"), namespace("qa1", "qa1"), namespace("qa1-sip-nl", "qa1")]
     })
 
-    const names = await new K8sClusterClient(optionsFor(api.apiUrl)).listStandNames()
+    const names = await new K8sClusterClient(optionsFor(api.apiUrl)).listStands()
     await api.close()
 
-    expect(names).toEqual(["qa1", "qa2"])
+    expect(names).toEqual([sharedStand("qa1"), sharedStand("qa2")])
     expect(api.received[0].url).toBe(`/api/v1/namespaces?labelSelector=${encodeURIComponent(STAND_LABEL)}`)
     expect(api.received[0].authorization).toBeUndefined()
+  })
+
+  it("reads the kind label and owner annotation from the stand's own namespace", async () => {
+    const api = await startApiServer(200, {
+      items: [
+        namespace("dev-ann-sip-nl", "dev-ann"),
+        namespace("dev-ann", "dev-ann", "ephemeral", "ann@example.org"),
+        namespace("qa1", "qa1", "unknown-kind")
+      ]
+    })
+
+    const stands = await new K8sClusterClient(optionsFor(api.apiUrl)).listStands()
+    await api.close()
+
+    expect(stands).toEqual([{ name: "dev-ann", kind: "ephemeral", owner: "ann@example.org" }, sharedStand("qa1")])
   })
 
   it("sends the service account token as a bearer token", async () => {
@@ -69,7 +94,7 @@ describe("Kubernetes cluster client", () => {
     await writeFile(tokenFile, "sa-token\n")
     const api = await startApiServer(200, { items: [] })
 
-    const names = await new K8sClusterClient(optionsFor(api.apiUrl, tokenFile)).listStandNames()
+    const names = await new K8sClusterClient(optionsFor(api.apiUrl, tokenFile)).listStands()
     await api.close()
     await rm(dir, { recursive: true })
 
@@ -80,7 +105,7 @@ describe("Kubernetes cluster client", () => {
   it("returns an error with the status when the API refuses the request", async () => {
     const api = await startApiServer(403, { message: "namespaces is forbidden" })
 
-    const names = await new K8sClusterClient(optionsFor(api.apiUrl)).listStandNames()
+    const names = await new K8sClusterClient(optionsFor(api.apiUrl)).listStands()
     await api.close()
 
     expect(names).toBeInstanceOf(Error)
@@ -90,7 +115,7 @@ describe("Kubernetes cluster client", () => {
   it("returns an error when the token file is missing", async () => {
     const api = await startApiServer(200, { items: [] })
 
-    const names = await new K8sClusterClient(optionsFor(api.apiUrl, "/nonexistent/token")).listStandNames()
+    const names = await new K8sClusterClient(optionsFor(api.apiUrl, "/nonexistent/token")).listStands()
     await api.close()
 
     expect(Array.isArray(names)).toBe(false)
