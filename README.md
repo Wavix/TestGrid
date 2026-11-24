@@ -139,8 +139,28 @@ metadata:
 | `K8S_API_URL` | No | Defaults to `https://kubernetes.default.svc` |
 | `K8S_TOKEN_FILE` | No | Defaults to the pod's service account token; set it empty to send no token |
 | `K8S_CA_FILE` | No | Defaults to the pod's service account CA |
+| `K8S_STAND_URLS_ANNOTATION` | No | Annotation key with the stand's URLs, separated by commas or spaces |
+| `K8S_STAND_EXPIRES_ANNOTATION` | No | Annotation key with the stand's expiry time (ISO 8601) |
+| `K8S_NAMESPACE_FILE` | No | Defaults to the pod's service account namespace; with `K8S_SELF_DEPLOYMENT` it names the Deployment TestGrid never scales |
+| `K8S_SELF_DEPLOYMENT` | No | Defaults to `testgrid` |
+| `ARGOCD_NAMESPACE` | No | Defaults to `argocd` |
+| `PROMETHEUS_URL` | No | Defaults to `http://monitoring-prometheus.monitoring.svc:9090` |
+| `K8S_STAND_DELETE_ENABLED` | No | `true` shows Delete on personal stands |
 
-Inside the cluster, the pod's service account needs permission to `list` `namespaces`. For local development run `kubectl proxy` and set `K8S_API_URL=http://127.0.0.1:8001` with `K8S_TOKEN_FILE=` empty.
+Inside the cluster, the pod's service account needs permission to `list` `namespaces`.
+
+#### Stand control
+
+Opening the Kubernetes panel of a stand loads its state every 10 seconds: Deployments and StatefulSets of the stand's own namespace (desired/ready replicas), the ArgoCD Applications whose `spec.destination.namespace` is that namespace (sync and health), the nodes and the memory requested (Prometheus), and the namespace's creation time, expiry time and URLs.
+
+- An admin can stop and start any workload; the owner of a personal stand can stop and start its workloads and the whole stand. A shared stand has no whole-stand stop and asks for confirmation before a workload stops.
+- Stop saves the replica count in `stand_replicas`, then patches the `scale` subresource to 0 with `fieldManager=testgrid`. An ArgoCD Application that ignores fields managed by `testgrid` keeps the stop.
+- Start patches the saved count back (1 if none was saved) with `fieldManager=testgrid-start`, which hands `spec.replicas` back to git, then clears the saved count.
+- TestGrid never scales its own Deployment.
+- With `K8S_STAND_DELETE_ENABLED=true`, an admin or the owner can delete a personal stand: TestGrid deletes the namespace, then the ArgoCD Applications labelled `K8S_STAND_LABEL=<stand>` in `ARGOCD_NAMESPACE`; a refused namespace delete leaves the Applications in place. A shared stand has no Delete.
+- A stand whose namespace answers 403 shows "No access, re-run bin/dev stand up".
+
+The service account needs `get`/`list` on `deployments` and `statefulsets` and `get`/`patch` on their `scale` subresource in each stand namespace, and `list` on `applications.argoproj.io` in `ARGOCD_NAMESPACE`. Delete also needs `delete` on those Applications and on `namespaces`; restrict it in the cluster (for example with a ValidatingAdmissionPolicy) to personal stands, because RBAC cannot scope it by label. For local development run `kubectl proxy` and set `K8S_API_URL=http://127.0.0.1:8001` with `K8S_TOKEN_FILE=` empty.
 
 Shared and personal stands are listed in separate sections. A personal stand shows its owner instead of repository bookings:
 

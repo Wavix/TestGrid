@@ -45,8 +45,15 @@ const optionsFor = (apiUrl: string, tokenFile = ""): K8sConfig => ({
   kindLabel: KIND_LABEL,
   ownerAnnotation: OWNER_ANNOTATION,
   apiUrl,
+  urlsAnnotation: "",
+  expiresAnnotation: "",
   tokenFile,
-  caFile: ""
+  caFile: "",
+  namespaceFile: "",
+  selfDeployment: "testgrid",
+  argocdNamespace: "argocd",
+  prometheusUrl: "",
+  deleteEnabled: false
 })
 
 const namespace = (name: string, stand?: string, kind?: string, owner?: string) => ({

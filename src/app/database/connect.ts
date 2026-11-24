@@ -21,7 +21,8 @@ const DB: Db = {
     Booking: Models.Booking(sequelize, DataTypes),
     Namespace: Models.Namespace(sequelize, DataTypes),
     BookingHistory: Models.BookingHistory(sequelize, DataTypes),
-    Notification: Models.Notification(sequelize, DataTypes)
+    Notification: Models.Notification(sequelize, DataTypes),
+    StandReplica: Models.StandReplica(sequelize, DataTypes)
   }
 }
 

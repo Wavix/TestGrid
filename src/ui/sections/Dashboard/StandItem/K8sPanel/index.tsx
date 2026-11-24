@@ -3,150 +3,237 @@ import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import { useState } from "react"
 
-import { StandAction, StandK8sState } from "@/app/backend/dashboard/interface"
+import { useFailureToast, useSuccessToast } from "@/hooks/toast"
+import { ScaleAction, StandAccess, StandRuntimeState, WorkloadKind } from "@/interfaces/stand-control.interface"
+import { deleteStand, scaleStand } from "@/ui/api/stand"
 
 import style from "./style.module.scss"
+import { useStandState } from "./useStandState"
 
-import type { ClusterCapacity, ResourceUsage, StandK8sInfo } from "@/app/backend/dashboard/interface"
+import type { StandWorkloadItem, WorkloadRef } from "@/interfaces/stand-control.interface"
 import type { FC } from "react"
 
 interface Props {
-  info: StandK8sInfo
-  cluster: ClusterCapacity
-  canManage: boolean
-  canDelete: boolean
-  onAction: (action: StandAction) => void
-}
-
-interface UsageRowProps {
-  label: string
-  unit: string
-  usage: ResourceUsage
-  nodeCapacity: number
-  clusterCapacity: number
+  standId: number
+  isShared: boolean
 }
 
 dayjs.extend(relativeTime)
 
-const STATE_LABELS: Record<StandK8sState, string> = {
-  [StandK8sState.Running]: "Running",
-  [StandK8sState.Degraded]: "Degraded",
-  [StandK8sState.Sleeping]: "Sleeping"
+const STATE_LABELS: Record<StandRuntimeState, string> = {
+  [StandRuntimeState.Running]: "Running",
+  [StandRuntimeState.Degraded]: "Degraded",
+  [StandRuntimeState.Stopped]: "Stopped"
 }
 
-const percent = (value: number, total: number): number => (total ? Math.round((value / total) * 100) : 0)
+const KIND_LABELS: Record<WorkloadKind, string> = {
+  [WorkloadKind.Deployment]: "deploy",
+  [WorkloadKind.StatefulSet]: "sts"
+}
 
-const UsageRow: FC<UsageRowProps> = ({ label, unit, usage, nodeCapacity, clusterCapacity }) => (
-  <div className={style.usageRow}>
-    <div className={style.usageHead}>
-      <span className={style.usageLabel}>{label}</span>
-      <span className={style.usageNumbers}>
-        <b>{usage.used}</b> used / <b>{usage.requested}</b> reserved {unit}
-      </span>
-    </div>
-    <div className={style.bar}>
-      <div className={style.reserved} style={{ width: `${percent(usage.requested, nodeCapacity)}%` }} />
-      <div className={style.used} style={{ width: `${percent(usage.used, nodeCapacity)}%` }} />
-    </div>
-    <div className={style.usageShare}>
-      reserved: {percent(usage.requested, nodeCapacity)}% of node · {percent(usage.requested, clusterCapacity)}% of
-      cluster
-    </div>
-  </div>
-)
+const HEALTHY = "Healthy"
+const SYNCED = "Synced"
+const STAND_KEY = "stand"
+const DELETE_KEY = "delete"
 
-export const K8sPanel: FC<Props> = ({ info, cluster, canManage, canDelete, onAction }) => {
-  const [isServicesOpen, setServicesOpen] = useState(false)
+const workloadKey = (workload: WorkloadRef): string => `${workload.kind}/${workload.name}`
 
-  const unhealthy = info.services.filter(service => !service.is_healthy).length
-  const outOfSync = info.services.filter(service => !service.is_synced).length
-  const isSleeping = info.state === StandK8sState.Sleeping
+export const K8sPanel: FC<Props> = ({ standId, isShared }) => {
+  const [isOpen, setOpen] = useState(false)
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [confirmKey, setConfirmKey] = useState<string | null>(null)
+  const { state, error, refresh } = useStandState(standId, isOpen)
+  const successToast = useSuccessToast()
+  const failureToast = useFailureToast()
+
+  const needsConfirm = (key: string, action: ScaleAction | typeof DELETE_KEY): boolean => {
+    const isRisky = action === DELETE_KEY || (isShared && action === ScaleAction.Stop)
+    if (!isRisky || confirmKey === key) return false
+
+    setConfirmKey(key)
+    return true
+  }
+
+  const runScale = async (key: string, action: ScaleAction, workload?: WorkloadRef) => {
+    if (needsConfirm(key, action)) return
+
+    setConfirmKey(null)
+    setBusyKey(key)
+    const response = await scaleStand(standId, { action, workload }).catch((e: Error) => ({
+      error: e.message,
+      failures: undefined
+    }))
+    setBusyKey(null)
+
+    if (response.error) {
+      failureToast(response.error)
+    } else if (response.failures?.length) {
+      failureToast(response.failures.map(failure => `${failure.name}: ${failure.error}`).join("\n"))
+    } else {
+      successToast(`${action === ScaleAction.Stop ? "Stopped" : "Started"} ${workload?.name || "stand"}`)
+    }
+
+    await refresh()
+  }
+
+  const runDelete = async () => {
+    if (needsConfirm(DELETE_KEY, DELETE_KEY)) return
+
+    setConfirmKey(null)
+    setBusyKey(DELETE_KEY)
+    const response = await deleteStand(standId).catch((e: Error) => ({ error: e.message }))
+    setBusyKey(null)
+
+    if (response.error) {
+      failureToast(response.error)
+      return
+    }
+
+    successToast("Stand deletion started")
+  }
+
+  const actionLabel = (key: string, label: string): string =>
+    confirmKey === key ? `Confirm ${label.toLowerCase()}` : label
+
+  const renderWorkloadAction = (workload: StandWorkloadItem) => {
+    if (!state?.can_control_workloads || workload.is_protected) return <span />
+
+    const key = workloadKey(workload)
+    const action = workload.desired > 0 ? ScaleAction.Stop : ScaleAction.Start
+    const label = action === ScaleAction.Stop ? "Stop" : "Start"
+
+    return (
+      <button
+        type="button"
+        className={classNames(style.action, style.small, { [style.danger]: action === ScaleAction.Stop })}
+        disabled={!!busyKey}
+        onClick={() => runScale(key, action, { kind: workload.kind, name: workload.name })}
+      >
+        {actionLabel(key, label)}
+      </button>
+    )
+  }
+
+  const renderBody = () => {
+    if (error) return <div className={style.bad}>{error}</div>
+    if (!state) return <div className={style.muted}>Loading…</div>
+
+    const isForbidden = state.access === StandAccess.Forbidden
+    const isStopped = state.state === StandRuntimeState.Stopped
+
+    return (
+      <>
+        <div className={style.statusRow}>
+          {isForbidden ? (
+            <span className={classNames(style.state, style.degraded)}>No access, re-run bin/dev stand up</span>
+          ) : (
+            state.state && (
+              <span className={classNames(style.state, style[state.state])}>{STATE_LABELS[state.state]}</span>
+            )
+          )}
+          {state.nodes.length > 0 && <span className={style.muted}>{state.nodes.join(", ")}</span>}
+          <div className={style.urls}>
+            {state.urls.map(url => (
+              <a key={url} href={url.includes("://") ? url : `https://${url}`} target="_blank" rel="noreferrer">
+                {url.replace(/^https?:\/\//, "")}
+              </a>
+            ))}
+          </div>
+        </div>
+
+        <div className={style.metaRow}>
+          {state.created_at && <span>created {dayjs(state.created_at).fromNow()}</span>}
+          {state.expires_at && dayjs(state.expires_at).isValid() && (
+            <span className={style.warn}>
+              {dayjs(state.expires_at).isBefore(dayjs()) ? "expired" : "expires"} {dayjs(state.expires_at).fromNow()}
+            </span>
+          )}
+          <span>
+            memory requested <b>{state.memory_requested_gib === null ? "n/a" : `${state.memory_requested_gib} GiB`}</b>
+          </span>
+        </div>
+
+        {state.warnings.length > 0 && (
+          <ul className={style.warnings}>
+            {state.warnings.map(warning => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        )}
+
+        {state.workloads.length > 0 && (
+          <div className={style.list}>
+            <div className={style.listTitle}>Workloads</div>
+            {state.workloads.map(workload => (
+              <div key={workloadKey(workload)} className={style.workload}>
+                <span
+                  className={classNames(style.dot, {
+                    [style.bad]: workload.ready < workload.desired,
+                    [style.off]: workload.desired === 0
+                  })}
+                />
+                <span className={style.name}>{workload.name}</span>
+                <span className={style.muted}>{KIND_LABELS[workload.kind]}</span>
+                <span className={style.muted}>
+                  {workload.ready}/{workload.desired}
+                  {workload.saved_replicas !== null && workload.desired === 0 && ` (was ${workload.saved_replicas})`}
+                </span>
+                {renderWorkloadAction(workload)}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {state.applications.length > 0 && (
+          <div className={style.list}>
+            <div className={style.listTitle}>ArgoCD</div>
+            {state.applications.map(app => (
+              <div key={app.name} className={style.application}>
+                <span className={classNames(style.dot, { [style.bad]: app.health !== HEALTHY })} />
+                <span className={style.name}>{app.name}</span>
+                <span className={style.version}>{app.version}</span>
+                <span className={classNames(style.status, { [style.warn]: app.sync !== SYNCED })}>{app.sync}</span>
+                <span className={classNames(style.status, { [style.bad]: app.health !== HEALTHY })}>{app.health}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(state.can_control_stand || state.can_delete) && (
+          <div className={style.actions}>
+            {state.can_control_stand && !isForbidden && (
+              <button
+                type="button"
+                className={style.action}
+                disabled={!!busyKey}
+                onClick={() => runScale(STAND_KEY, isStopped ? ScaleAction.Start : ScaleAction.Stop)}
+              >
+                {actionLabel(STAND_KEY, isStopped ? "Start" : "Stop")}
+              </button>
+            )}
+            {state.can_delete && (
+              <button
+                type="button"
+                className={classNames(style.action, style.danger)}
+                disabled={!!busyKey}
+                onClick={runDelete}
+              >
+                {actionLabel(DELETE_KEY, "Delete")}
+              </button>
+            )}
+          </div>
+        )}
+      </>
+    )
+  }
 
   return (
     <div className={style.k8sPanel}>
-      <div className={style.statusRow}>
-        <span className={classNames(style.state, style[info.state])}>{STATE_LABELS[info.state]}</span>
-        <span className={style.node}>{info.node}</span>
-        <div className={style.urls}>
-          {info.urls.map(url => (
-            <a key={url} href={`https://${url}`} target="_blank" rel="noreferrer">
-              {url}
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {(info.created_at || info.expires_at) && (
-        <div className={style.ownerRow}>
-          {info.created_at && <span>created {dayjs(info.created_at).fromNow()}</span>}
-          {info.expires_at && <span className={style.expires}>expires {dayjs(info.expires_at).fromNow()}</span>}
-        </div>
-      )}
-
-      <div className={style.usage}>
-        <UsageRow
-          label="CPU"
-          unit="cores"
-          usage={info.cpu_cores}
-          nodeCapacity={cluster.node_cpu_cores}
-          clusterCapacity={cluster.cluster_cpu_cores}
-        />
-        <UsageRow
-          label="Memory"
-          unit="GiB"
-          usage={info.memory_gib}
-          nodeCapacity={cluster.node_memory_gib}
-          clusterCapacity={cluster.cluster_memory_gib}
-        />
-      </div>
-
-      <button type="button" className={style.servicesToggle} onClick={() => setServicesOpen(!isServicesOpen)}>
-        <span>
-          {info.services.length} services
-          {unhealthy > 0 && <span className={style.bad}> · {unhealthy} unhealthy</span>}
-          {outOfSync > 0 && <span className={style.warn}> · {outOfSync} out of sync</span>}
-          {unhealthy === 0 && outOfSync === 0 && !isSleeping && <span className={style.good}> · all healthy</span>}
-        </span>
-        <span>{isServicesOpen ? "▴" : "▾"}</span>
+      <button type="button" className={style.toggle} onClick={() => setOpen(!isOpen)}>
+        <span>Kubernetes</span>
+        <span>{isOpen ? "▴" : "▾"}</span>
       </button>
-
-      {isServicesOpen && (
-        <div className={style.servicesList}>
-          {info.services.map(service => (
-            <div key={service.name} className={style.service}>
-              <span className={classNames(style.dot, { [style.bad]: !service.is_healthy && !isSleeping })} />
-              <span className={style.serviceName}>{service.name}</span>
-              <span className={style.serviceVersion}>{service.version}</span>
-              <span className={classNames(style.serviceSync, { [style.warn]: !service.is_synced })}>
-                {service.is_synced ? "Synced" : "OutOfSync"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {canManage && (
-        <div className={style.actions}>
-          {isSleeping ? (
-            <button type="button" className={style.action} onClick={() => onAction(StandAction.Wake)}>
-              Wake
-            </button>
-          ) : (
-            <button type="button" className={style.action} onClick={() => onAction(StandAction.Sleep)}>
-              Sleep
-            </button>
-          )}
-          {canDelete && (
-            <button
-              type="button"
-              className={classNames(style.action, style.danger)}
-              onClick={() => onAction(StandAction.Delete)}
-            >
-              Delete
-            </button>
-          )}
-        </div>
-      )}
+      {isOpen && <div className={style.body}>{renderBody()}</div>}
     </div>
   )
 }

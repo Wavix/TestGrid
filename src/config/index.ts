@@ -4,9 +4,16 @@ export interface K8sConfig {
   testgridNamespace: string
   kindLabel: string
   ownerAnnotation: string
+  urlsAnnotation: string
+  expiresAnnotation: string
   apiUrl: string
   tokenFile: string
   caFile: string
+  namespaceFile: string
+  selfDeployment: string
+  argocdNamespace: string
+  prometheusUrl: string
+  deleteEnabled: boolean
 }
 
 const SERVICE_ACCOUNT_DIR = "/var/run/secrets/kubernetes.io/serviceaccount"
@@ -21,9 +28,16 @@ export const config = {
     testgridNamespace: process.env.K8S_TESTGRID_NAMESPACE || "",
     kindLabel: process.env.K8S_STAND_KIND_LABEL || "",
     ownerAnnotation: process.env.K8S_STAND_OWNER_ANNOTATION || "",
+    urlsAnnotation: process.env.K8S_STAND_URLS_ANNOTATION || "",
+    expiresAnnotation: process.env.K8S_STAND_EXPIRES_ANNOTATION || "",
     apiUrl: process.env.K8S_API_URL || "https://kubernetes.default.svc",
     tokenFile: process.env.K8S_TOKEN_FILE ?? `${SERVICE_ACCOUNT_DIR}/token`,
-    caFile: process.env.K8S_CA_FILE ?? `${SERVICE_ACCOUNT_DIR}/ca.crt`
+    caFile: process.env.K8S_CA_FILE ?? `${SERVICE_ACCOUNT_DIR}/ca.crt`,
+    namespaceFile: process.env.K8S_NAMESPACE_FILE ?? `${SERVICE_ACCOUNT_DIR}/namespace`,
+    selfDeployment: process.env.K8S_SELF_DEPLOYMENT || "testgrid",
+    argocdNamespace: process.env.ARGOCD_NAMESPACE || "argocd",
+    prometheusUrl: process.env.PROMETHEUS_URL || "http://monitoring-prometheus.monitoring.svc:9090",
+    deleteEnabled: process.env.K8S_STAND_DELETE_ENABLED === "true"
   } satisfies K8sConfig
 }
 
