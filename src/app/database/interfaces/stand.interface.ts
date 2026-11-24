@@ -1,4 +1,4 @@
-import type { StandSource } from "@/interfaces/stand.interface"
+import type { StandKind, StandSource } from "@/interfaces/stand.interface"
 import type { Model, ModelStatic, Optional } from "sequelize"
 
 export interface StandAttributes {
@@ -8,11 +8,13 @@ export interface StandAttributes {
   created_at: Date
   is_smoke_test: boolean
   source: StandSource
+  kind: StandKind
+  owner: string | null
 }
 
 export interface StandCreationAttributes extends Optional<
   StandAttributes,
-  "id" | "created_at" | "is_smoke_test" | "source"
+  "id" | "created_at" | "is_smoke_test" | "source" | "kind" | "owner"
 > {}
 
 export interface StandInstance extends Model<StandAttributes, StandCreationAttributes>, StandAttributes {}

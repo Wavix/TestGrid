@@ -2,19 +2,30 @@ import { readFile } from "fs/promises"
 import http from "http"
 import https from "https"
 
+import { StandKind } from "@/interfaces/stand.interface"
+
 import type { K8sConfig } from "@/config"
 
+export interface ClusterStand {
+  name: string
+  kind: StandKind
+  owner: string | null
+}
+
 export interface ClusterClient {
-  listStandNames(): Promise<Array<string> | Error>
+  listStands(): Promise<Array<ClusterStand> | Error>
+}
+
+interface K8sNamespace {
+  metadata: {
+    name: string
+    labels?: Record<string, string>
+    annotations?: Record<string, string>
+  }
 }
 
 interface K8sNamespaceList {
-  items: Array<{
-    metadata: {
-      name: string
-      labels?: Record<string, string>
-    }
-  }>
+  items: Array<K8sNamespace>
 }
 
 const REQUEST_TIMEOUT_MS = 5000
@@ -27,20 +38,40 @@ export class K8sClusterClient implements ClusterClient {
     this.options = options
   }
 
-  public async listStandNames(): Promise<Array<string> | Error> {
+  public async listStands(): Promise<Array<ClusterStand> | Error> {
     try {
       const url = new URL("/api/v1/namespaces", this.options.apiUrl)
       url.searchParams.set("labelSelector", this.options.standLabel)
 
       const list = await this.getJson<K8sNamespaceList>(url)
-      const names = list.items
-        .map(item => item.metadata.labels?.[this.options.standLabel])
-        .filter((name): name is string => Boolean(name))
+      const stands = new Map<string, ClusterStand>()
 
-      return Array.from(new Set(names)).sort()
+      for (const item of list.items) {
+        const name = item.metadata.labels?.[this.options.standLabel]
+        if (!name) continue
+
+        const isStandNamespace = item.metadata.name === name
+        if (stands.has(name) && !isStandNamespace) continue
+
+        stands.set(name, { name, kind: this.kindOf(item), owner: this.ownerOf(item) })
+      }
+
+      return Array.from(stands.values()).sort((a, b) => a.name.localeCompare(b.name))
     } catch (e) {
       return e as Error
     }
+  }
+
+  private kindOf(item: K8sNamespace): StandKind {
+    const value = this.options.kindLabel ? item.metadata.labels?.[this.options.kindLabel] : undefined
+
+    return value === StandKind.Ephemeral ? StandKind.Ephemeral : StandKind.Permanent
+  }
+
+  private ownerOf(item: K8sNamespace): string | null {
+    if (!this.options.ownerAnnotation) return null
+
+    return item.metadata.annotations?.[this.options.ownerAnnotation] || null
   }
 
   private async getJson<T>(url: URL): Promise<T> {

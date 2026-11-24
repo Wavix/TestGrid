@@ -1,4 +1,4 @@
-import { StandKind } from "@/app/backend/dashboard/interface"
+import { StandKind } from "@/interfaces/stand.interface"
 import { Switch } from "@/ui/components/form"
 import { Card } from "@/ui/components/layout"
 
@@ -20,8 +20,8 @@ interface Props {
 }
 
 export const StandItem: FC<Props> = ({ user, item, cluster, onRelease, onChangeSmokeTestMode, onStandAction }) => {
-  const isPersonal = item.k8s?.kind === StandKind.Ephemeral
-  const isOwner = !!item.k8s?.owner_name && item.k8s.owner_name === user?.name
+  const isPersonal = item.kind === StandKind.Ephemeral
+  const isOwner = !!item.owner && item.owner === user?.email
   const canManage = !!user?.is_admin || (isPersonal && isOwner)
 
   return (
@@ -44,6 +44,11 @@ export const StandItem: FC<Props> = ({ user, item, cluster, onRelease, onChangeS
             </div>
           )}
         </div>
+        {item.owner && (
+          <div className={style.owner}>
+            Owner <b>{item.owner}</b>
+          </div>
+        )}
         {item.k8s && cluster && (
           <K8sPanel
             info={item.k8s}

@@ -13,25 +13,30 @@ export class StandSyncService {
   }
 
   public async syncNamespaceStands(namespaceId: number): Promise<Error | null> {
-    const clusterStandNames = await this.clusterClient.listStandNames()
-    if (clusterStandNames instanceof Error) return clusterStandNames
+    const clusterStands = await this.clusterClient.listStands()
+    if (clusterStands instanceof Error) return clusterStands
+
+    const clusterStandNames = clusterStands.map(stand => stand.name)
 
     try {
       await DB.sequelize.transaction(async transaction => {
-        const inCluster = { namespace_id: namespaceId, name: { [Op.in]: clusterStandNames } }
-        const existing = await DB.models.Stand.findAll({ where: inCluster, transaction })
-        const existingNames = new Set(existing.map(stand => stand.name))
+        const existing = await DB.models.Stand.findAll({
+          where: { namespace_id: namespaceId, name: { [Op.in]: clusterStandNames } },
+          transaction
+        })
+        const existingByName = new Map(existing.map(stand => [stand.name, stand]))
 
         await DB.models.Stand.bulkCreate(
-          clusterStandNames
-            .filter(name => !existingNames.has(name))
-            .map(name => ({ name, namespace_id: namespaceId, source: StandSource.K8s })),
+          clusterStands
+            .filter(stand => !existingByName.has(stand.name))
+            .map(stand => ({ ...stand, namespace_id: namespaceId, source: StandSource.K8s })),
           { transaction }
         )
 
-        await DB.models.Stand.update(
-          { source: StandSource.K8s },
-          { where: { ...inCluster, source: { [Op.ne]: StandSource.K8s } }, transaction }
+        await Promise.all(
+          clusterStands.map(({ name, kind, owner }) =>
+            existingByName.get(name)?.update({ source: StandSource.K8s, kind, owner }, { transaction })
+          )
         )
 
         await DB.models.Stand.destroy({

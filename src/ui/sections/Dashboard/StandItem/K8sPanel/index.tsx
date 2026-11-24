@@ -76,11 +76,8 @@ export const K8sPanel: FC<Props> = ({ info, cluster, canManage, canDelete, onAct
         </div>
       </div>
 
-      {info.owner_name && (
+      {(info.created_at || info.expires_at) && (
         <div className={style.ownerRow}>
-          <span>
-            Owner <b>{info.owner_name}</b>
-          </span>
           {info.created_at && <span>created {dayjs(info.created_at).fromNow()}</span>}
           {info.expires_at && <span className={style.expires}>expires {dayjs(info.expires_at).fromNow()}</span>}
         </div>

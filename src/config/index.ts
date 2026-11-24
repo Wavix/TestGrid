@@ -2,6 +2,8 @@ export interface K8sConfig {
   enabled: boolean
   standLabel: string
   testgridNamespace: string
+  kindLabel: string
+  ownerAnnotation: string
   apiUrl: string
   tokenFile: string
   caFile: string
@@ -17,6 +19,8 @@ export const config = {
     enabled: process.env.K8S_ENABLED === "true",
     standLabel: process.env.K8S_STAND_LABEL || "",
     testgridNamespace: process.env.K8S_TESTGRID_NAMESPACE || "",
+    kindLabel: process.env.K8S_STAND_KIND_LABEL || "",
+    ownerAnnotation: process.env.K8S_STAND_OWNER_ANNOTATION || "",
     apiUrl: process.env.K8S_API_URL || "https://kubernetes.default.svc",
     tokenFile: process.env.K8S_TOKEN_FILE ?? `${SERVICE_ACCOUNT_DIR}/token`,
     caFile: process.env.K8S_CA_FILE ?? `${SERVICE_ACCOUNT_DIR}/ca.crt`

@@ -1,4 +1,4 @@
-import type { StandSource } from "@/interfaces/stand.interface"
+import type { StandKind, StandSource } from "@/interfaces/stand.interface"
 
 export interface Dashboard {
   stands: Array<DashboardStandItem>
@@ -9,11 +9,6 @@ export enum StandK8sState {
   Running = "running",
   Degraded = "degraded",
   Sleeping = "sleeping"
-}
-
-export enum StandKind {
-  Permanent = "permanent",
-  Ephemeral = "ephemeral"
 }
 
 export enum StandAction {
@@ -35,8 +30,6 @@ export interface StandK8sService {
 }
 
 export interface StandK8sInfo {
-  kind: StandKind
-  owner_name?: string
   created_at?: string
   expires_at?: string
   state: StandK8sState
@@ -62,6 +55,8 @@ export interface DashboardStandItem {
   name: string
   is_smoke_test: boolean
   source: StandSource
+  kind: StandKind
+  owner: string | null
   k8s?: StandK8sInfo
   repositories: Array<DashboardRepositoryItem>
 }

@@ -22,6 +22,8 @@ export class DashboardService {
         name: stand.name,
         is_smoke_test: stand.is_smoke_test,
         source: stand.source,
+        kind: stand.kind,
+        owner: stand.owner,
         repositories: repositories.map(repo => {
           const booking = standBooks.find(item => item.repository_id === repo.id)
 

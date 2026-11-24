@@ -123,13 +123,31 @@ metadata:
 | `K8S_ENABLED` | Yes | `true` turns the feature on |
 | `K8S_STAND_LABEL` | Yes | Label key on namespaces; the value is the stand name |
 | `K8S_TESTGRID_NAMESPACE` | Yes | TestGrid namespace that owns the cluster's stands |
+| `K8S_STAND_KIND_LABEL` | No | Label key; the value `ephemeral` marks a personal stand, anything else is a shared stand |
+| `K8S_STAND_OWNER_ANNOTATION` | No | Annotation key with the owner's email, shown on the stand card |
 | `K8S_API_URL` | No | Defaults to `https://kubernetes.default.svc` |
 | `K8S_TOKEN_FILE` | No | Defaults to the pod's service account token; set it empty to send no token |
 | `K8S_CA_FILE` | No | Defaults to the pod's service account CA |
 
 Inside the cluster, the pod's service account needs permission to `list` `namespaces`. For local development run `kubectl proxy` and set `K8S_API_URL=http://127.0.0.1:8001` with `K8S_TOKEN_FILE=` empty.
 
-Upgrading from `v1.0.0`: run `pnpm migrate up` to add the `stands.source` column.
+Shared and personal stands are listed in separate sections. A personal stand shows its owner instead of repository bookings:
+
+```yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev-ann
+  labels:
+    example.org/stand: dev-ann
+    example.org/stand-kind: ephemeral
+  annotations:
+    example.org/stand-owner: ann@company.org
+```
+
+When a stand spans several namespaces, the kind and owner are read from the namespace named after the stand.
+
+Upgrading from `v1.0.0`: run `pnpm migrate up` to add the `stands.source`, `stands.kind` and `stands.owner` columns.
 
 ### Pipeline Integration
 **Example: GitLab Integration**
