@@ -1,5 +1,8 @@
 import { Chart as ChartJS, Legend, Tooltip, ArcElement } from "chart.js"
+import { useContext } from "react"
 import { Pie } from "react-chartjs-2"
+
+import { Theme, ThemeContext } from "@/ui/ThemeContext"
 
 import type { UserBookStatistics } from "@/interfaces/statistics.interface"
 import type { FC } from "react"
@@ -10,7 +13,13 @@ interface Props {
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const LEGEND_COLORS: Record<Theme, string> = {
+  [Theme.Dark]: "#fafafa",
+  [Theme.Light]: "#171717"
+}
+
 export const PieGraphic: FC<Props> = ({ stats }) => {
+  const { theme } = useContext(ThemeContext)
   const getColor = (username: string): string => {
     const hashCode = username.split("").reduce((prev, curr) => prev + curr.charCodeAt(0), 0)
 
@@ -42,13 +51,13 @@ export const PieGraphic: FC<Props> = ({ stats }) => {
   const options = {
     responsive: true,
     maintainAspectRatio: true,
-    defaultFontColor: "#ffffff",
+    defaultFontColor: LEGEND_COLORS[theme],
     plugins: {
       legend: {
         display: true,
         position: "right",
         labels: {
-          color: "#ffffff",
+          color: LEGEND_COLORS[theme],
           font: {
             size: 15
           }

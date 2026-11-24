@@ -36,11 +36,11 @@
   }
 
   &:nth-child(even) {
-    background: #252c3b;
+    background: $card-alt;
   }
 
   &.own {
-    background-color: #26375b;
+    background-color: $card-accent;
     animation: blinkOwn 3s infinite;
   }
 
@@ -71,8 +71,8 @@
       svg {
         max-width: 20px;
         max-height: 20px;
-        fill: #72fbf3;
-        stroke: #72fbf3;
+        fill: $text;
+        stroke: $text;
       }
 
       &:hover {

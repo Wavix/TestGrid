@@ -103,7 +103,7 @@ export const Notifications: FC = () => {
           <Drawer.Positioner>
             <Drawer.Content className={style.notificationsDrawer}>
               <Drawer.CloseTrigger asChild>
-                <CloseButton size="sm" variant="plain" color="white" className={style.closeButton} />
+                <CloseButton size="sm" variant="plain" color="var(--tg-foreground)" className={style.closeButton} />
               </Drawer.CloseTrigger>
               <Drawer.Header className={style.header}>
                 <Drawer.Title>Notifications</Drawer.Title>

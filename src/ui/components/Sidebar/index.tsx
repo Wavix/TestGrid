@@ -7,6 +7,7 @@ import { LoginContext } from "@/ui/LoginContext"
 
 import { MenuButton } from "./MenuButton"
 import { Notifications } from "./Notifications"
+import { ThemeToggle } from "./ThemeToggle"
 import { HomeIcon, LogoIcon, LogoutIcon, TemplatesIcon, StatsIcon } from "./icons"
 import style from "./style.module.scss"
 
@@ -42,6 +43,7 @@ export const Sidebar: FC = () => {
       )}
 
       <div className={style.bottom}>
+        <ThemeToggle />
         <Notifications />
         <MenuButton content={<LogoutIcon />} onClick={logOut} />
         <Avatar.Root

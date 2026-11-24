@@ -1,3 +1,4 @@
+@use "src/styles/palette.module.scss" as *;
 .inputFilter {
   position: relative;
 
@@ -9,7 +10,7 @@
     position: absolute;
     top: 16px;
     right: 16px;
-    color: #ccc;
+    color: $muted-text;
     cursor: pointer;
     font-size: 10px;
     z-index: 10;

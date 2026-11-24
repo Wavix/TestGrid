@@ -1,3 +1,4 @@
+@use "src/styles/palette.module.scss" as *;
 @use "src/styles/global.module.scss" as *;
 @use "src/styles/mixins.module.scss" as *;
 
@@ -23,6 +24,19 @@
 
   @include from($xxl) {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.sectionTitle {
+  margin-top: $content-top-padding;
+  color: $text;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  + .standsLayout {
+    margin-top: 12px;
   }
 }
 
