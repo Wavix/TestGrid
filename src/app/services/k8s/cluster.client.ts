@@ -21,6 +21,7 @@ export interface ClusterClient {
 export interface ClusterWorkload {
   kind: WorkloadKind
   name: string
+  application: string | null
   desired: number
   ready: number
 }
@@ -91,6 +92,8 @@ const REQUEST_TIMEOUT_MS = 5000
 const DEFAULT_REPLICAS = 1
 const UNKNOWN_STATUS = "Unknown"
 const URL_SEPARATOR = /[\s,]+/
+const TRACKING_ID_ANNOTATION = "argocd.argoproj.io/tracking-id"
+const INSTANCE_LABEL = "app.kubernetes.io/instance"
 
 const WORKLOAD_RESOURCES: Record<WorkloadKind, string> = {
   [WorkloadKind.Deployment]: "deployments",
@@ -239,9 +242,17 @@ export class K8sClusterClient implements ClusterClient, StandClusterClient {
     return {
       kind,
       name: item.metadata.name,
+      application: this.applicationOf(item),
       desired: item.spec?.replicas ?? DEFAULT_REPLICAS,
       ready: item.status?.readyReplicas ?? 0
     }
+  }
+
+  private applicationOf(item: K8sWorkload): string | null {
+    const trackingId = item.metadata.annotations?.[TRACKING_ID_ANNOTATION]
+    if (trackingId) return trackingId.split(":")[0]
+
+    return item.metadata.labels?.[INSTANCE_LABEL] || null
   }
 
   private kindOf(item: K8sNamespace): StandKind {

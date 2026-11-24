@@ -4,15 +4,13 @@ import { getStandState } from "@/ui/api/stand"
 
 import type { StandStateResponse } from "@/interfaces/stand-control.interface"
 
-const REFRESH_INTERVAL_MS = 10_000
-
 export interface StandStateHook {
   state: StandStateResponse | null
   error: string | null
   refresh: () => Promise<void>
 }
 
-export const useStandState = (standId: number, isOpen: boolean): StandStateHook => {
+export const useStandState = (standId: number, isEnabled: boolean, intervalMs: number): StandStateHook => {
   const [state, setState] = useState<StandStateResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -33,13 +31,17 @@ export const useStandState = (standId: number, isOpen: boolean): StandStateHook 
   }, [standId])
 
   useEffect(() => {
-    if (!isOpen) return undefined
+    if (!isEnabled) return undefined
+
+    const refreshVisible = () => {
+      if (!document.hidden) refresh()
+    }
 
     refresh()
-    const interval = setInterval(refresh, REFRESH_INTERVAL_MS)
+    const interval = setInterval(refreshVisible, intervalMs)
 
     return () => clearInterval(interval)
-  }, [isOpen, refresh])
+  }, [isEnabled, intervalMs, refresh])
 
   return { state, error, refresh }
 }

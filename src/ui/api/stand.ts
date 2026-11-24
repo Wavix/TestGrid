@@ -1,6 +1,7 @@
 import { getAuthToken } from "./helpers"
 
 import type {
+  ClusterResourcesResponse,
   ScaleRequestBody,
   ScaleResponse,
   StandStateResponse,
@@ -14,6 +15,14 @@ const readJson = async <T>(response: Response): Promise<Partial<T> & ApiResponse
     const failure: ApiResponseError = { error: `Request failed with status ${response.status}` }
     return failure as Partial<T> & ApiResponseError
   }
+}
+
+export const getClusterResources = async (): Promise<Partial<ClusterResourcesResponse> & ApiResponseError> => {
+  const response = await fetch("/backend/cluster", {
+    headers: { Authorization: getAuthToken() }
+  })
+
+  return readJson<ClusterResourcesResponse>(response)
 }
 
 export const getStandState = async (standId: number): Promise<Partial<StandStateResponse> & ApiResponseError> => {

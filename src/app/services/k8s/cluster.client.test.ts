@@ -95,6 +95,35 @@ describe("Kubernetes cluster client", () => {
     expect(stands).toEqual([{ name: "dev-ann", kind: "ephemeral", owner: "ann@example.org" }, sharedStand("qa1")])
   })
 
+  it("names the ArgoCD application that tracks each workload", async () => {
+    const workload = (name: string, metadata: Record<string, unknown>) => ({
+      metadata: { name, ...metadata },
+      spec: { replicas: 1 },
+      status: { readyReplicas: 1 }
+    })
+    const api = await startApiServer(200, {
+      items: [
+        workload("backend-web", {
+          annotations: { "argocd.argoproj.io/tracking-id": "qa1-backend:apps/Deployment:qa1/backend-web" },
+          labels: { "app.kubernetes.io/instance": "backend-chart" }
+        }),
+        workload("frontend", { labels: { "app.kubernetes.io/instance": "qa1-frontend" } }),
+        workload("orphan", {})
+      ]
+    })
+
+    const workloads = await new K8sClusterClient(optionsFor(api.apiUrl)).listWorkloads("qa1")
+    await api.close()
+
+    expect(workloads).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "Deployment", name: "backend-web", application: "qa1-backend" }),
+        expect.objectContaining({ kind: "Deployment", name: "frontend", application: "qa1-frontend" }),
+        expect.objectContaining({ kind: "Deployment", name: "orphan", application: null })
+      ])
+    )
+  })
+
   it("sends the service account token as a bearer token", async () => {
     const dir = await mkdtemp(path.join(tmpdir(), "testgrid-k8s-"))
     const tokenFile = path.join(dir, "token")

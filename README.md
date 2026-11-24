@@ -151,7 +151,9 @@ Inside the cluster, the pod's service account needs permission to `list` `namesp
 
 #### Stand control
 
-Opening the Kubernetes panel of a stand loads its state every 10 seconds: Deployments and StatefulSets of the stand's own namespace (desired/ready replicas), the ArgoCD Applications whose `spec.destination.namespace` is that namespace (sync and health), the nodes and the memory requested (Prometheus), and the namespace's creation time, expiry time and URLs.
+The dashboard shows one stand at a time. Above the switcher, a cluster line shows CPU and memory used, and requested by Pending and Running pods against the nodes' allocatable CPU and memory (`kube_node_status_allocatable`), refreshed every 30 seconds while the tab is visible. A switcher lists one chip per stand with its state (running, degraded, stopped; refreshed every 30 seconds while the tab is visible) and, for a shared stand, the number of free modules; picked components in "Find free stands for components" highlight the shared stands where all of them are free. The selected stand is in the URL as `?stand=<name>`; without one, or with a stand that no longer exists, `qa1` is selected.
+
+The selected stand loads its state every 10 seconds: Deployments and StatefulSets of the stand's own namespace (desired/ready replicas), the ArgoCD Applications whose `spec.destination.namespace` is that namespace (sync and health), the nodes, CPU used and requested in cores and memory used and requested in GiB (Prometheus; requested counts Pending and Running pods only), and the namespace's creation time, expiry time and URLs. A workload belongs to the Application named in its `argocd.argoproj.io/tracking-id` annotation, else in its `app.kubernetes.io/instance` label. A shared stand has a Booking tab (open by default) and a Kubernetes tab with one row per service; a personal stand has only the Kubernetes tab.
 
 - An admin can stop and start any workload; the owner of a personal stand can stop and start its workloads and the whole stand. A shared stand has no whole-stand stop and asks for confirmation before a workload stops.
 - Stop saves the replica count in `stand_replicas`, then patches the `scale` subresource to 0 with `fieldManager=testgrid`. An ArgoCD Application that ignores fields managed by `testgrid` keeps the stop.
@@ -162,7 +164,7 @@ Opening the Kubernetes panel of a stand loads its state every 10 seconds: Deploy
 
 The service account needs `get`/`list` on `deployments` and `statefulsets` and `get`/`patch` on their `scale` subresource in each stand namespace, and `list` on `applications.argoproj.io` in `ARGOCD_NAMESPACE`. Delete also needs `delete` on those Applications and on `namespaces`; restrict it in the cluster (for example with a ValidatingAdmissionPolicy) to personal stands, because RBAC cannot scope it by label. For local development run `kubectl proxy` and set `K8S_API_URL=http://127.0.0.1:8001` with `K8S_TOKEN_FILE=` empty.
 
-Shared and personal stands are listed in separate sections. A personal stand shows its owner instead of repository bookings:
+Shared stands come first in the switcher. A personal stand shows its owner instead of repository bookings:
 
 ```yaml
 apiVersion: v1
