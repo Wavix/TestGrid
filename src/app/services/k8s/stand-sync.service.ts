@@ -18,15 +18,21 @@ export class StandSyncService {
 
     try {
       await DB.sequelize.transaction(async transaction => {
-        for (const name of clusterStandNames) {
-          const [stand] = await DB.models.Stand.findOrCreate({
-            where: { name, namespace_id: namespaceId },
-            defaults: { name, namespace_id: namespaceId, source: StandSource.K8s },
-            transaction
-          })
+        const inCluster = { namespace_id: namespaceId, name: { [Op.in]: clusterStandNames } }
+        const existing = await DB.models.Stand.findAll({ where: inCluster, transaction })
+        const existingNames = new Set(existing.map(stand => stand.name))
 
-          if (stand.source !== StandSource.K8s) await stand.update({ source: StandSource.K8s }, { transaction })
-        }
+        await DB.models.Stand.bulkCreate(
+          clusterStandNames
+            .filter(name => !existingNames.has(name))
+            .map(name => ({ name, namespace_id: namespaceId, source: StandSource.K8s })),
+          { transaction }
+        )
+
+        await DB.models.Stand.update(
+          { source: StandSource.K8s },
+          { where: { ...inCluster, source: { [Op.ne]: StandSource.K8s } }, transaction }
+        )
 
         await DB.models.Stand.destroy({
           where: { namespace_id: namespaceId, source: StandSource.K8s, name: { [Op.notIn]: clusterStandNames } },
