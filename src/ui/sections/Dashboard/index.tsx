@@ -89,9 +89,14 @@ const DashboardPage: NextPage = () => {
   }
 
   const getVisibleRepositories = (stand: DashboardStandItem): Array<DashboardRepositoryItem> => {
-    if (!router.query.own) return stand.repositories
+    const componentsFilter = getComponentsFilter()
+    const isOwnOnly = !!router.query.own
 
-    return stand.repositories.filter(repository => repository.booking?.user?.id === user?.id)
+    return stand.repositories.filter(
+      repository =>
+        (!componentsFilter.length || componentsFilter.includes(repository.name)) &&
+        (!isOwnOnly || repository.booking?.user?.id === user?.id)
+    )
   }
 
   const stands = [

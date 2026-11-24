@@ -10,6 +10,7 @@ export interface RepositoryAttributes {
 export interface RepositoryCreationAttributes extends Optional<RepositoryAttributes, "id" | "created_at"> {}
 
 export interface RepositoryInstance
-  extends Model<RepositoryAttributes, RepositoryCreationAttributes>, RepositoryAttributes {}
+  extends Model<RepositoryAttributes, RepositoryCreationAttributes>,
+    RepositoryAttributes {}
 
 export interface RepositoryModel extends ModelStatic<RepositoryInstance> {}

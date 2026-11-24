@@ -9,6 +9,7 @@ export interface NamespaceAttributes {
 export interface NamespaceCreationAttributes extends Optional<NamespaceAttributes, "id" | "created_at"> {}
 
 export interface NamespaceInstance
-  extends Model<NamespaceAttributes, NamespaceCreationAttributes>, NamespaceAttributes {}
+  extends Model<NamespaceAttributes, NamespaceCreationAttributes>,
+    NamespaceAttributes {}
 
 export interface NamespaceModel extends ModelStatic<NamespaceInstance> {}

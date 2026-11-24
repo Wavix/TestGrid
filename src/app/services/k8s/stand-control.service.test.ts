@@ -482,8 +482,8 @@ describe("Stand control", () => {
       ).toEqual([
         'count by (node) (kube_pod_info{namespace="qa1"})',
         'sum(container_memory_working_set_bytes{namespace="qa1",container!=""})',
-        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="cpu"})',
-        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="memory"})',
+        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="cpu"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{namespace="qa1",phase=~"Pending|Running"}) == 1))',
+        'sum(kube_pod_container_resource_requests{namespace="qa1",resource="memory"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{namespace="qa1",phase=~"Pending|Running"}) == 1))',
         'sum(rate(container_cpu_usage_seconds_total{namespace="qa1",container!=""}[5m]))'
       ])
     })

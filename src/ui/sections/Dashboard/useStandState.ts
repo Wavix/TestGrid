@@ -33,8 +33,12 @@ export const useStandState = (standId: number, isEnabled: boolean, intervalMs: n
   useEffect(() => {
     if (!isEnabled) return undefined
 
+    const refreshVisible = () => {
+      if (!document.hidden) refresh()
+    }
+
     refresh()
-    const interval = setInterval(refresh, intervalMs)
+    const interval = setInterval(refreshVisible, intervalMs)
 
     return () => clearInterval(interval)
   }, [isEnabled, intervalMs, refresh])

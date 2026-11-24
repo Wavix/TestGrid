@@ -76,6 +76,7 @@ export const StandView: FC<Props> = ({ item, repositories, user, onRelease, onCh
 
       {activeTab === StandTab.Booking && (
         <div className={style.standRepositories}>
+          {!repositories.length && <p className={style.empty}>No modules match the filters</p>}
           {repositories.map(repository => (
             <RepositoryItem
               item={repository}

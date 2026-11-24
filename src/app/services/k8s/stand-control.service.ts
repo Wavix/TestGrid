@@ -37,7 +37,7 @@ export const NO_ACCESS_MESSAGE = "No access, re-run bin/dev stand up"
 
 const DEFAULT_START_REPLICAS = 1
 const BYTES_IN_GIB = 1024 ** 3
-const CORES_IN_CORE = 1
+const NO_SCALING = 1
 const VALUE_PRECISION = 100
 const DNS_LABEL = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?$/
 
@@ -66,18 +66,21 @@ interface ResourceQuery {
   promql: (namespace: string) => string
 }
 
+const liveRequests = (namespace: string, resource: string): string =>
+  `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="${resource}"} * on (namespace, pod) group_left () (max by (namespace, pod) (kube_pod_status_phase{namespace="${namespace}",phase=~"Pending|Running"}) == 1))`
+
 const RESOURCE_QUERIES: Array<ResourceQuery> = [
   {
     field: "cpu_used_cores",
     label: "CPU used",
-    divisor: CORES_IN_CORE,
+    divisor: NO_SCALING,
     promql: namespace => `sum(rate(container_cpu_usage_seconds_total{namespace="${namespace}",container!=""}[5m]))`
   },
   {
     field: "cpu_requested_cores",
     label: "CPU requested",
-    divisor: CORES_IN_CORE,
-    promql: namespace => `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="cpu"})`
+    divisor: NO_SCALING,
+    promql: namespace => liveRequests(namespace, "cpu")
   },
   {
     field: "memory_used_gib",
@@ -89,7 +92,7 @@ const RESOURCE_QUERIES: Array<ResourceQuery> = [
     field: "memory_requested_gib",
     label: "memory requested",
     divisor: BYTES_IN_GIB,
-    promql: namespace => `sum(kube_pod_container_resource_requests{namespace="${namespace}",resource="memory"})`
+    promql: namespace => liveRequests(namespace, "memory")
   }
 ]
 
