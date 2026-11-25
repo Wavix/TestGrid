@@ -29,7 +29,7 @@ export const getValueFromBodyByNestedKey = (nestedKeys: string, body: any) => {
 
       if (currentObj && typeof currentObj === "object" && currentObj[keyName][arrayIndex]) {
         currentObj = currentObj[keyName][arrayIndex]
-        // eslint-disable-next-line no-continue
+
         continue
       } else {
         return null

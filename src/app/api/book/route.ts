@@ -9,6 +9,7 @@ import { NotificationService } from "@/app/services/notification.service"
 import { RepositoryService } from "@/app/services/repository.service"
 import { StandService } from "@/app/services/stand.service"
 import { UserService } from "@/app/services/user.service"
+import { parseBranchList } from "@/helpers/branch-list"
 import { BookStatus } from "@/interfaces/book.interface"
 
 import { schema } from "./validation"
@@ -68,18 +69,22 @@ const deploymentRequest = async (request: Request) => {
       return NextResponse.json(`1|Smoke test is running now on ${stand.name}`.toUpperCase())
     }
 
-    const bookingResult = await bookingService.createBooking({
+    const bookingPayload = {
       namespace_id: namespace.id,
       user_id: user.id,
       branch_name: payload.branch,
       stand_id: stand.id,
       repository_id: repository.id
-    })
+    }
+    const isBookingFreeBranch = parseBranchList(namespace.booking_free_branches).includes(payload.branch)
+    const bookingResult = isBookingFreeBranch
+      ? await bookingService.checkBooking(bookingPayload)
+      : await bookingService.createBooking(bookingPayload)
 
     if (bookingResult instanceof Error)
       return NextResponse.json({ error: bookingResult.message }, { status: httpStatus.BAD_REQUEST })
 
-    if (!bookingResult.is_already_booked && bookingResult.is_booking_allowed) {
+    if (!isBookingFreeBranch && !bookingResult.is_already_booked && bookingResult.is_booking_allowed) {
       const bookingHistoryResult = await bookingHistoryService.createBookingHistory(
         user.id,
         namespace.id,

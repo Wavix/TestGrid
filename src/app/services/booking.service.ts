@@ -24,6 +24,25 @@ class BookingService {
   public async createBooking(payload: BookingCreationAttributes): Promise<StandBookingResponse | Error> {
     const { user_id, namespace_id, branch_name, stand_id, repository_id } = payload
 
+    const existing = await this.checkBooking(payload)
+    if (existing.is_already_booked) return existing
+
+    const response = await DB.models.Booking.create({
+      stand_id,
+      repository_id,
+      user_id,
+      branch_name,
+      namespace_id
+    })
+
+    if (!response) throw new Error("Error while booking stand")
+
+    return existing
+  }
+
+  public async checkBooking(payload: BookingCreationAttributes): Promise<StandBookingResponse> {
+    const { user_id, namespace_id, stand_id, repository_id } = payload
+
     const bookingByCurrentUser = await DB.models.Booking.findOne({
       where: {
         stand_id,
@@ -56,16 +75,6 @@ class BookingService {
         is_booking_allowed: false,
         booked_user: bookingByAnotherUser
       }
-
-    const response = await DB.models.Booking.create({
-      stand_id,
-      repository_id,
-      user_id,
-      branch_name,
-      namespace_id
-    })
-
-    if (!response) throw new Error("Error while booking stand")
 
     return { is_already_booked: false, is_booking_allowed: true, booked_user: null }
   }

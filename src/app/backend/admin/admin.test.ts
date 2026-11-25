@@ -1,8 +1,10 @@
+import { DB } from "@/app/database"
 import { destroy } from "@/helpers/jest"
 import RequestHelper from "@/helpers/tests/request.helper"
 import Stand from "@/helpers/tests/stand.helper"
 import User from "@/helpers/tests/user.helper"
 
+import { GET as getNamespaceSettings, PATCH as patchNamespaceSettings } from "./namespace/route"
 import { PATCH } from "./stands/[standId]/route"
 import { PATCH as updateUser, GET as getById } from "./users/[userId]/route"
 import { PATCH as resetPassword } from "./users/reset-password/[userId]/route"
@@ -153,4 +155,34 @@ describe("Backend admin users", () => {
 
 afterAll(async () => {
   await destroy()
+})
+
+describe("Backend admin namespace settings", () => {
+  it("Saves booking-free branches trimmed and without duplicates", async () => {
+    const user = await new User().create({ email: "1@test.wavix", name: "1@test" })
+    if (!user.data) throw new Error()
+
+    const requestHelper = new RequestHelper(user.token)
+    const { request } = requestHelper.patchRequest({ booking_free_branches: [" main ", "main", "release"] }, {})
+    const patchResponse = await patchNamespaceSettings(request)
+    const getResponse = await getNamespaceSettings(requestHelper.getRequest().request)
+
+    await user.destroy()
+
+    expect(patchResponse.status).toBe(200)
+    expect((await getResponse.json()).settings.booking_free_branches).toEqual(["main", "release"])
+  })
+
+  it("Refuses a non-admin user", async () => {
+    const user = await new User().create({ email: "1@test.wavix", name: "1@test" })
+    if (!user.data) throw new Error()
+    await DB.models.User.update({ is_admin: false }, { where: { id: user.id } })
+
+    const { request } = new RequestHelper(user.token).patchRequest({ booking_free_branches: ["main"] }, {})
+    const response = await patchNamespaceSettings(request)
+
+    await user.destroy()
+
+    expect(response.status).toBe(403)
+  })
 })

@@ -1,3 +1,4 @@
+import { DB } from "@/app/database"
 import { destroy } from "@/helpers/jest"
 import Booking from "@/helpers/tests/booking.helper"
 import Repository from "@/helpers/tests/repository.helper"
@@ -124,6 +125,74 @@ describe("Api Book", () => {
 
     const body = await response.json()
     expect(body).toBe(`1|STAND IS ALREADY BOOKED BY ${bookingUser.data.name.toUpperCase()}`)
+  })
+  it("Deploy from a booking-free branch leaves the service free", async () => {
+    const user = await new User().create()
+    if (!user.data || !user.data.namespace) throw new Error()
+    await DB.models.Namespace.update({ booking_free_branches: "main" }, { where: { id: user.data.namespace_id } })
+
+    const stand = await new Stand(user.data.namespace_id).create()
+    const repository = await new Repository(user.data.namespace_id).create()
+
+    const request = new RequestHelper().postRequest({
+      user_name: user.data.name,
+      user_email: user.data.email,
+      namespace: user.data.namespace.name,
+      repository: repository.data?.name,
+      stand: stand.data?.name,
+      branch: "main"
+    })
+    const response = await POST(request)
+    const bookings = await DB.models.Booking.count({ where: { stand_id: stand.id, repository_id: repository.id } })
+
+    await stand.destroy()
+    await repository.destroy()
+    await user.destroy()
+
+    if (response instanceof Error) throw response
+    expect(await response.json()).toBe("Success!")
+    expect(bookings).toBe(0)
+  })
+
+  it("Deploy from a booking-free branch is refused while another user has the service booked", async () => {
+    const bookingUser = await new User().create({ email: "1@test.wavix", name: "1@test" })
+    const currentUser = await new User().create({
+      namespace_id: bookingUser.data?.namespace_id,
+      email: "2@test.wavix",
+      name: "2@test"
+    })
+    if (!bookingUser.data || !currentUser.data) throw new Error()
+    await DB.models.Namespace.update(
+      { booking_free_branches: "main" },
+      { where: { id: bookingUser.data.namespace_id } }
+    )
+
+    const stand = await new Stand(bookingUser.data.namespace_id).create()
+    const repository = await new Repository(bookingUser.data.namespace_id).create()
+    const booking = await new Booking(bookingUser.data).create({
+      stand_id: stand.id,
+      repository_id: repository.id,
+      user_id: bookingUser.id
+    })
+
+    const request = new RequestHelper().postRequest({
+      user_name: currentUser.data.name,
+      user_email: currentUser.data.email,
+      namespace: bookingUser.data.namespace?.name,
+      repository: repository.data?.name,
+      stand: stand.data?.name,
+      branch: "main"
+    })
+    const response = await POST(request)
+
+    await stand.destroy()
+    await repository.destroy()
+    await booking.destroy()
+    await currentUser.destroy()
+    await bookingUser.destroy()
+
+    if (response instanceof Error) throw response
+    expect(await response.json()).toBe(`1|STAND IS ALREADY BOOKED BY ${bookingUser.data.name.toUpperCase()}`)
   })
 })
 
