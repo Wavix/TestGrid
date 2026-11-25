@@ -2,6 +2,7 @@ import { getAuthToken } from "@/ui/api/helpers"
 
 import type { UserListItem, UserListResponse } from "@/interfaces/auth.interface"
 import type { BookingHistoryResponse } from "@/interfaces/booking-history.interface"
+import type { NamespaceSettings, NamespaceSettingsResponse } from "@/interfaces/namespace.interface"
 import type { StandItem, StandUpdateResponse } from "@/interfaces/stand.interface"
 import type { UserResetPasswordResponse, UserUpdateResponse } from "@/interfaces/user.interface"
 
@@ -50,6 +51,26 @@ export const resetPassword = async (userId: number): Promise<UserResetPasswordRe
   const response = await fetch(`/backend/admin/users/reset-password/${userId}`, {
     headers: { Authorization: getAuthToken() },
     method: "PATCH"
+  })
+
+  return await response.json()
+}
+
+export const getNamespaceSettings = async (): Promise<NamespaceSettingsResponse & ApiResponseError> => {
+  const response = await fetch("/backend/admin/namespace", {
+    headers: { Authorization: getAuthToken() }
+  })
+
+  return await response.json()
+}
+
+export const updateNamespaceSettings = async (
+  body: NamespaceSettings
+): Promise<NamespaceSettingsResponse & ApiResponseError> => {
+  const response = await fetch("/backend/admin/namespace", {
+    headers: { Authorization: getAuthToken() },
+    method: "PATCH",
+    body: JSON.stringify(body)
   })
 
   return await response.json()

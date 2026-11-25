@@ -10,6 +10,7 @@ import { LoginContext } from "@/ui/LoginContext"
 import { getUsers, updateUser, resetPassword } from "@/ui/api/admin"
 import { Card, SectionWrapper } from "@/ui/components/layout"
 
+import { BookingFreeBranches } from "./BookingFreeBranches"
 import style from "./style.module.scss"
 
 import type { UserListItem } from "@/interfaces/auth.interface"
@@ -84,7 +85,8 @@ const Admin = () => {
         <title>TestGrid - Admin</title>
       </Head>
       <SectionWrapper title="Admin" description={`User management area for ${currentUser?.namespace.name} namespace`}>
-        <Card.Container>
+        <BookingFreeBranches />
+        <Card.Container gutterTop>
           {isLoading ? (
             <Stack padding={4} gap={1}>
               {[...Array(4)].map((_, index) => (

@@ -70,6 +70,7 @@ export const RepositoryItem: FC<Props> = ({ item, isSmokeTest, onRelease }) => {
             </div>
           </>
         )}
+        {!isBooked && item.last_branch && <div className={style.lastBranch}>{item.last_branch}</div>}
       </div>
       <div className={style.actions}>
         {canRelease && !isReleased && <ReleaseButton onClick={onReleaseHandle} />}

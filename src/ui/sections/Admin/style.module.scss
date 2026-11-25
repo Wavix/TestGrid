@@ -38,3 +38,22 @@
     color: $red;
   }
 }
+
+.settingHint {
+  color: $muted-text;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.settingRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settingInput {
+  max-width: 400px;
+  background: $background;
+  border-color: $split-line;
+  color: $text;
+}
