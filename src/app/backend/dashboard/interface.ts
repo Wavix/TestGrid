@@ -17,6 +17,7 @@ export interface DashboardStandItem {
 export interface DashboardRepositoryItem {
   id: number
   name: string
+  last_branch: string | null
   booking: DashboardRepositoryBookingItem | null
 }
 

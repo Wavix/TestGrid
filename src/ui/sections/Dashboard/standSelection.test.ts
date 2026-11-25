@@ -15,6 +15,7 @@ const booking = {
 const repository = (id: number, name: string, isBooked = false): DashboardRepositoryItem => ({
   id,
   name,
+  last_branch: null,
   booking: isBooked ? booking : null
 })
 

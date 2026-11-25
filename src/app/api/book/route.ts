@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { getBodyPayload } from "@/app/backend/helpers"
 import { BookingHistoryService } from "@/app/services/booking-history.service"
 import { BookingService } from "@/app/services/booking.service"
+import { LastBranchService } from "@/app/services/last-branch.service"
 import { NamespaceService } from "@/app/services/namespace.service"
 import { NotificationService } from "@/app/services/notification.service"
 import { RepositoryService } from "@/app/services/repository.service"
@@ -20,6 +21,7 @@ const repositoryService = new RepositoryService()
 const bookingService = new BookingService()
 const bookingHistoryService = new BookingHistoryService()
 const userService = new UserService()
+const lastBranchService = new LastBranchService()
 const notificationService = new NotificationService()
 
 export const POST = async (request: Request) => await deploymentRequest(request)
@@ -116,6 +118,7 @@ const deploymentRequest = async (request: Request) => {
     }
 
     if (bookingResult.is_booking_allowed) {
+      await lastBranchService.remember(stand.id, repository.id, payload.branch)
       return NextResponse.json("Success!")
     }
 

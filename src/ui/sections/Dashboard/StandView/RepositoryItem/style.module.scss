@@ -60,6 +60,11 @@
     }
   }
 
+  .lastBranch {
+    color: $muted-text;
+    font-size: 12px;
+  }
+
   .actions {
     display: flex;
     justify-content: flex-end;

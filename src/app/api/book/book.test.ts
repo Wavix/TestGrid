@@ -144,6 +144,9 @@ describe("Api Book", () => {
     })
     const response = await POST(request)
     const bookings = await DB.models.Booking.count({ where: { stand_id: stand.id, repository_id: repository.id } })
+    const lastBranch = await DB.models.LastBranch.findOne({
+      where: { stand_id: stand.id, repository_id: repository.id }
+    })
 
     await stand.destroy()
     await repository.destroy()
@@ -152,6 +155,7 @@ describe("Api Book", () => {
     if (response instanceof Error) throw response
     expect(await response.json()).toBe("Success!")
     expect(bookings).toBe(0)
+    expect(lastBranch?.branch_name).toBe("main")
   })
 
   it("Deploy from a booking-free branch is refused while another user has the service booked", async () => {
@@ -193,6 +197,54 @@ describe("Api Book", () => {
 
     if (response instanceof Error) throw response
     expect(await response.json()).toBe(`1|STAND IS ALREADY BOOKED BY ${bookingUser.data.name.toUpperCase()}`)
+  })
+  it("Last branch follows allowed deploys and ignores refused ones", async () => {
+    const bookingUser = await new User().create({ email: "1@test.wavix", name: "1@test" })
+    const otherUser = await new User().create({
+      namespace_id: bookingUser.data?.namespace_id,
+      email: "2@test.wavix",
+      name: "2@test"
+    })
+    if (!bookingUser.data?.namespace || !otherUser.data) throw new Error()
+
+    const stand = await new Stand(bookingUser.data.namespace_id).create()
+    const repository = await new Repository(bookingUser.data.namespace_id).create()
+
+    const deploy = async (user: typeof bookingUser.data, branch: string) => {
+      const response = await POST(
+        new RequestHelper().postRequest({
+          user_name: user?.name,
+          user_email: user?.email,
+          namespace: bookingUser.data?.namespace?.name,
+          repository: repository.data?.name,
+          stand: stand.data?.name,
+          branch
+        })
+      )
+      if (response instanceof Error) throw response
+      const lastBranch = await DB.models.LastBranch.findOne({
+        where: { stand_id: stand.id, repository_id: repository.id }
+      })
+      return { body: await response.json(), lastBranch: lastBranch?.branch_name }
+    }
+
+    const first = await deploy(bookingUser.data, "feature/DEV-1-first")
+    const second = await deploy(bookingUser.data, "feature/DEV-2-second")
+    const refused = await deploy(otherUser.data, "feature/DEV-3-other")
+
+    await DB.models.Booking.destroy({ where: { stand_id: stand.id } })
+    await DB.models.LastBranch.destroy({ where: { stand_id: stand.id } })
+    await stand.destroy()
+    await repository.destroy()
+    await otherUser.destroy()
+    await bookingUser.destroy()
+
+    expect(first).toEqual({ body: "Success!", lastBranch: "feature/DEV-1-first" })
+    expect(second).toEqual({ body: "Success!", lastBranch: "feature/DEV-2-second" })
+    expect(refused).toEqual({
+      body: `1|STAND IS ALREADY BOOKED BY ${bookingUser.data.name.toUpperCase()}`,
+      lastBranch: "feature/DEV-2-second"
+    })
   })
 })
 
