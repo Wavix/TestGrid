@@ -22,7 +22,7 @@ const getNotifications = async (request: Request): Promise<NextResponse<Notifica
       return NextResponse.json({ error: notifications.message }, { status: httpStatus.BAD_REQUEST })
 
     return NextResponse.json({ notifications })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Error while getting notifications" }, { status: httpStatus.BAD_REQUEST })
   }
 }

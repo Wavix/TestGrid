@@ -15,6 +15,11 @@ export const Namespace = (sequelize: Sequelize.Sequelize, DataTypes: typeof Sequ
         allowNull: false,
         unique: true
       },
+      booking_free_branches: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: ""
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

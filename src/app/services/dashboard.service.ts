@@ -1,9 +1,11 @@
+import { config } from "@/config"
+
 import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
 import type { BookingAttributes } from "@/app/database/interfaces/booking.interface"
+import type { LastBranchAttributes } from "@/app/database/interfaces/last-branch.interface"
 import type { RepositoryAttributes } from "@/app/database/interfaces/repository.interface"
 import type { StandAttributes } from "@/app/database/interfaces/stand.interface"
 import type { UserAttributes } from "@/app/database/interfaces/user.interface"
-import { config } from "@/config"
 import type { BaseUserResponse } from "@/interfaces/auth.interface"
 
 export class DashboardService {
@@ -11,6 +13,7 @@ export class DashboardService {
     stands: Array<StandAttributes>,
     books: Array<BookingAttributes>,
     repositories: Array<RepositoryAttributes>,
+    lastBranches: Array<LastBranchAttributes>,
     user: BaseUserResponse
   ): Array<DashboardStandItem> {
     return stands.map(stand => {
@@ -20,12 +23,18 @@ export class DashboardService {
         id: stand.id,
         name: stand.name,
         is_smoke_test: stand.is_smoke_test,
+        source: stand.source,
+        kind: stand.kind,
+        owner: stand.owner,
         repositories: repositories.map(repo => {
           const booking = standBooks.find(item => item.repository_id === repo.id)
+
+          const lastBranch = lastBranches.find(item => item.stand_id === stand.id && item.repository_id === repo.id)
 
           return {
             id: repo.id,
             name: repo.name,
+            last_branch: lastBranch?.branch_name ?? null,
             booking: booking
               ? {
                   id: booking.id,

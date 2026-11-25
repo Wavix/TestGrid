@@ -17,7 +17,7 @@
     svg {
       min-width: 20px;
       min-height: 20px;
-      fill: #8b8c98;
+      fill: $muted-text;
     }
   }
 
@@ -35,16 +35,16 @@
 
     .menuButtonIconWrapper {
       svg {
-        fill: #fff;
+        fill: $text;
       }
     }
   }
 
   &:hover {
-    background-color: #2f3749;
+    background-color: $hover;
 
     svg {
-      fill: #fff;
+      fill: $text;
     }
   }
 }

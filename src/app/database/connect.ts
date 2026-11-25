@@ -7,7 +7,7 @@ import type { Db } from "./interfaces"
 
 const sequelize = new Sequelize({
   dialect: "sqlite",
-  storage: "database.sqlite",
+  storage: process.env.DATABASE_PATH || "database.sqlite",
   logging: false
 })
 
@@ -21,7 +21,9 @@ const DB: Db = {
     Booking: Models.Booking(sequelize, DataTypes),
     Namespace: Models.Namespace(sequelize, DataTypes),
     BookingHistory: Models.BookingHistory(sequelize, DataTypes),
-    Notification: Models.Notification(sequelize, DataTypes)
+    Notification: Models.Notification(sequelize, DataTypes),
+    StandReplica: Models.StandReplica(sequelize, DataTypes),
+    LastBranch: Models.LastBranch(sequelize, DataTypes)
   }
 }
 

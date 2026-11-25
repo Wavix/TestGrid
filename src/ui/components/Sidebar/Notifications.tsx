@@ -2,18 +2,10 @@ import classNames from "classnames"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import React, { type FC, useEffect, useState, useRef } from "react"
+import { LuBell } from "react-icons/lu"
 import useSound from "use-sound"
 
-import { BellIcon } from "@chakra-ui/icons"
-import {
-  Drawer,
-  DrawerBody,
-  DrawerHeader,
-  DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
-  useDisclosure
-} from "@chakra-ui/react"
+import { CloseButton, Drawer, Portal, useDisclosure } from "@chakra-ui/react"
 
 import { getNotifications, readNotifications } from "@/ui/api/notifications"
 
@@ -27,7 +19,7 @@ const REFRESH_INTERVAL_SEC = 5
 dayjs.extend(relativeTime)
 
 export const Notifications: FC = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { open: isOpen, onOpen, onClose } = useDisclosure()
   const [play] = useSound("/audio/notification.mp3")
   const [notifications, setNotifications] = useState<Array<NotificationListItem> | null>([])
   const updateInterval = useRef<NodeJS.Timeout | null>(null)
@@ -90,7 +82,7 @@ export const Notifications: FC = () => {
           <div
             className={classNames(style.notificationIcon, { [style.new]: notifications && notifications.length > 0 })}
           >
-            <BellIcon />
+            <LuBell />
           </div>
         }
         onClick={onOpen}
@@ -100,25 +92,38 @@ export const Notifications: FC = () => {
         Player
       </button>
 
-      <Drawer size="lg" isOpen={isOpen} placement="right" onClose={onClose}>
-        <DrawerOverlay />
-        <DrawerContent className={style.notificationsDrawer}>
-          <DrawerCloseButton className={style.closeButton} />
-          <DrawerHeader className={style.header}>Notifications</DrawerHeader>
-          <DrawerBody className={style.drawerBody}>
-            {notifications && notifications.length > 0 ? (
-              notifications.map(notification => (
-                <div key={notification.id} className={style.notificationItem}>
-                  <div className={style.date}>{dayjs(notification.created_at).fromNow()}</div>
-                  <div className={style.message}>{notification.message}</div>
-                </div>
-              ))
-            ) : (
-              <p>No notifications</p>
-            )}
-          </DrawerBody>
-        </DrawerContent>
-      </Drawer>
+      <Drawer.Root
+        size="lg"
+        open={isOpen}
+        placement="end"
+        onOpenChange={details => (details.open ? onOpen() : onClose())}
+      >
+        <Portal>
+          <Drawer.Backdrop />
+          <Drawer.Positioner>
+            <Drawer.Content className={style.notificationsDrawer}>
+              <Drawer.CloseTrigger asChild>
+                <CloseButton size="sm" variant="plain" color="var(--tg-foreground)" className={style.closeButton} />
+              </Drawer.CloseTrigger>
+              <Drawer.Header className={style.header}>
+                <Drawer.Title>Notifications</Drawer.Title>
+              </Drawer.Header>
+              <Drawer.Body className={style.drawerBody}>
+                {notifications && notifications.length > 0 ? (
+                  notifications.map(notification => (
+                    <div key={notification.id} className={style.notificationItem}>
+                      <div className={style.date}>{dayjs(notification.created_at).fromNow()}</div>
+                      <div className={style.message}>{notification.message}</div>
+                    </div>
+                  ))
+                ) : (
+                  <p>No notifications</p>
+                )}
+              </Drawer.Body>
+            </Drawer.Content>
+          </Drawer.Positioner>
+        </Portal>
+      </Drawer.Root>
     </div>
   )
 }

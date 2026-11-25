@@ -1,8 +1,7 @@
 import Head from "next/head"
 import { useRouter } from "next/router"
 import React, { useContext, useEffect, useState } from "react"
-
-import { ArrowBackIcon } from "@chakra-ui/icons"
+import { LuArrowLeft } from "react-icons/lu"
 
 import { LoginContext } from "@/ui/LoginContext"
 import { getUserBookingHistoriesById } from "@/ui/api/admin"
@@ -51,7 +50,7 @@ const UserEdit = () => {
         <div>loader</div>
       ) : (
         <SectionWrapper title="User booking history">
-          <ArrowBackIcon onClick={onClickHandler} className={style.arrowBack} />
+          <LuArrowLeft onClick={onClickHandler} className={style.arrowBack} />
           {bookingHistories.map((item, index) => (
             <HistoryItem key={index.toString()} item={item} />
           ))}

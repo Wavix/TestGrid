@@ -1,3 +1,43 @@
+:root {
+  --tg-background: #0a0a0a;
+  --tg-card: #171717;
+  --tg-card-alt: #1c1c1c;
+  --tg-card-accent: rgba(56, 189, 248, 0.08);
+  --tg-hover: #262626;
+  --tg-foreground: #fafafa;
+  --tg-muted-foreground: #a1a1a1;
+  --tg-border: rgba(255, 255, 255, 0.1);
+  --tg-outline: rgba(255, 255, 255, 0.2);
+  --tg-success: #34d399;
+  --tg-danger: #f87171;
+  --tg-warning: #fbbf24;
+  --tg-link: #38bdf8;
+  --tg-primary: #e5e5e5;
+  --tg-primary-foreground: #171717;
+  --tg-primary-hover: #ffffff;
+  --tg-track: rgba(255, 255, 255, 0.08);
+}
+
+[data-tg-theme="light"] {
+  --tg-background: #f5f5f5;
+  --tg-card: #ffffff;
+  --tg-card-alt: #fafafa;
+  --tg-card-accent: rgba(2, 132, 199, 0.07);
+  --tg-hover: #f0f0f0;
+  --tg-foreground: #171717;
+  --tg-muted-foreground: #737373;
+  --tg-border: #e5e5e5;
+  --tg-outline: #d4d4d4;
+  --tg-success: #059669;
+  --tg-danger: #dc2626;
+  --tg-warning: #b45309;
+  --tg-link: #0369a1;
+  --tg-primary: #171717;
+  --tg-primary-foreground: #fafafa;
+  --tg-primary-hover: #404040;
+  --tg-track: rgba(0, 0, 0, 0.07);
+}
+
 * {
   font-family: "Roboto", sans-serif;
 }
@@ -12,16 +52,16 @@ body > div:first-child,
 div#__next,
 div#__next > div {
   height: 100%;
-  background-color: #191e2a;
+  background-color: var(--tg-background);
 }
 
 a {
-  color: #0bc5ea !important;
+  color: var(--tg-link) !important;
   text-decoration: underline !important;
 }
 
 a:hover {
-  color: #0bc5ea !important;
+  color: var(--tg-link) !important;
   text-decoration: none !important;
 }
 
@@ -29,24 +69,24 @@ a:hover {
   * React Select
   */
 .dropdown__menu {
-  background-color: #212632 !important;
-  border: 1px solid #8b8c98;
+  background-color: var(--tg-card) !important;
+  border: 1px solid var(--tg-outline);
 }
 
 .dropdown__option {
   &:hover {
-    background-color: #31394b !important;
+    background-color: var(--tg-hover) !important;
   }
 }
 
 .dropdown__option--is-focused {
-  background-color: #31394b !important;
+  background-color: var(--tg-hover) !important;
 }
 
 .dropdown__multi-value {
-  background-color: #26375b !important;
+  background-color: var(--tg-hover) !important;
 }
 
 .dropdown__multi-value__label {
-  color: #fff !important;
+  color: var(--tg-foreground) !important;
 }

@@ -5,22 +5,55 @@
   text-decoration: underline;
 }
 
+.resetButton {
+  height: 32px !important;
+  padding: 0 14px;
+  border: 1px solid $split-line;
+  border-radius: 4px;
+  color: $text;
+  font-size: 13px;
+  font-weight: 500;
+
+  &:hover {
+    background: $hover;
+  }
+}
+
 .tableHeader {
   th {
-    color: #fff;
+    color: $text;
   }
 }
 
 .tableItem {
   &:nth-child(even) {
-    background: #252c3b;
+    background: $card-alt;
   }
 
   .admin {
-    color: $tiffany-blue;
+    color: $link;
   }
 
   .blocked {
     color: $red;
   }
+}
+
+.settingHint {
+  color: $muted-text;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.settingRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.settingInput {
+  max-width: 400px;
+  background: $background;
+  border-color: $split-line;
+  color: $text;
 }

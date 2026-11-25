@@ -9,11 +9,14 @@ import { getBooking, release } from "@/ui/api/booking"
 import { History } from "@/ui/components"
 import { Card, SectionWrapper } from "@/ui/components/layout"
 
+import { ClusterSummary } from "./ClusterSummary"
 import { DashboardFilters } from "./Filters"
-import { StandItem } from "./StandItem"
+import { StandSwitcher } from "./StandSwitcher"
+import { StandView } from "./StandView"
+import { isPersonalStand, isStandFreeFor, selectStand } from "./standSelection"
 import style from "./style.module.scss"
 
-import type { DashboardStandItem } from "@/app/backend/dashboard/interface"
+import type { DashboardRepositoryItem, DashboardStandItem } from "@/app/backend/dashboard/interface"
 import type { NextPage } from "next"
 
 const REFRESH_BOOKINGS_INTERVAL_SEC = 5
@@ -38,6 +41,8 @@ const DashboardPage: NextPage = () => {
 
   const getBookings = async () => {
     const response = await getBooking()
+    if (response.error || !response.stands) return
+
     setBooking(response.stands)
   }
 
@@ -77,38 +82,31 @@ const DashboardPage: NextPage = () => {
     getBookings()
   }
 
-  const getList = (): Array<DashboardStandItem> => {
-    if (!booking.length) return []
+  const getRequestedStand = (): string | undefined =>
+    typeof router.query.stand === "string" ? router.query.stand : undefined
 
-    const componentsFilter = getComponentsFilter()
-    const ownFilter = !!router.query.own
-    const hasFilters = componentsFilter.length > 0 || ownFilter
-
-    return booking.reduce((acc: Array<DashboardStandItem>, item) => {
-      if (!hasFilters) return [...acc, item]
-
-      if (ownFilter) {
-        if (!item.repositories.some(repository => repository.booking?.user?.id === user?.id)) return acc
-
-        const repositories = item.repositories.filter(repo => repo.booking?.user?.id === user?.id)
-        return [...acc, { ...item, repositories }]
-      }
-
-      if (componentsFilter) {
-        const repositories = item.repositories.filter(
-          repository =>
-            componentsFilter.includes(repository.name) &&
-            (!repository.booking || repository.booking?.user?.id === user?.id)
-        )
-
-        if (repositories.length < componentsFilter.length) return acc
-
-        return [...acc, { ...item, repositories }]
-      }
-
-      return [...acc, item]
-    }, [])
+  const handleSelectStand = (name: string) => {
+    router.push({ query: { ...router.query, stand: name } }, undefined, { shallow: true })
   }
+
+  const getVisibleRepositories = (stand: DashboardStandItem): Array<DashboardRepositoryItem> => {
+    const componentsFilter = getComponentsFilter()
+    const isOwnOnly = !!router.query.own
+
+    return stand.repositories.filter(
+      repository =>
+        (!componentsFilter.length || componentsFilter.includes(repository.name)) &&
+        (!isOwnOnly || repository.booking?.user?.id === user?.id)
+    )
+  }
+
+  const stands = [
+    ...booking.filter(stand => !isPersonalStand(stand)),
+    ...booking.filter(stand => isPersonalStand(stand))
+  ]
+  const selectedStand = selectStand(stands, getRequestedStand())
+  const componentsFilter = getComponentsFilter()
+  const highlightedNames = stands.filter(stand => isStandFreeFor(stand, componentsFilter)).map(stand => stand.name)
 
   return (
     <>
@@ -117,19 +115,29 @@ const DashboardPage: NextPage = () => {
       </Head>
 
       <SectionWrapper title="Dashboard" description={user?.namespace.name}>
+        <ClusterSummary />
+
+        <StandSwitcher
+          stands={stands}
+          selectedName={selectedStand?.name}
+          highlightedNames={highlightedNames}
+          onSelect={handleSelectStand}
+        />
+
         <DashboardFilters items={booking} />
 
-        <div className={style.standsLayout}>
-          {getList().map(stand => (
-            <StandItem
+        {selectedStand && (
+          <div className={style.selectedStand}>
+            <StandView
+              key={selectedStand.id}
+              item={selectedStand}
+              repositories={getVisibleRepositories(selectedStand)}
               user={user}
-              item={stand}
-              key={stand.name}
               onRelease={onRelease}
               onChangeSmokeTestMode={onChangeSmokeTestMode}
             />
-          ))}
-        </div>
+          </div>
+        )}
 
         <Card.Container>
           <Card.Header>History</Card.Header>

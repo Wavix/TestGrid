@@ -4,11 +4,13 @@ import { NextResponse } from "next/server"
 import { getBodyPayload } from "@/app/backend/helpers"
 import { BookingHistoryService } from "@/app/services/booking-history.service"
 import { BookingService } from "@/app/services/booking.service"
+import { LastBranchService } from "@/app/services/last-branch.service"
 import { NamespaceService } from "@/app/services/namespace.service"
 import { NotificationService } from "@/app/services/notification.service"
 import { RepositoryService } from "@/app/services/repository.service"
 import { StandService } from "@/app/services/stand.service"
 import { UserService } from "@/app/services/user.service"
+import { parseBranchList } from "@/helpers/branch-list"
 import { BookStatus } from "@/interfaces/book.interface"
 
 import { schema } from "./validation"
@@ -19,6 +21,7 @@ const repositoryService = new RepositoryService()
 const bookingService = new BookingService()
 const bookingHistoryService = new BookingHistoryService()
 const userService = new UserService()
+const lastBranchService = new LastBranchService()
 const notificationService = new NotificationService()
 
 export const POST = async (request: Request) => await deploymentRequest(request)
@@ -68,18 +71,22 @@ const deploymentRequest = async (request: Request) => {
       return NextResponse.json(`1|Smoke test is running now on ${stand.name}`.toUpperCase())
     }
 
-    const bookingResult = await bookingService.createBooking({
+    const bookingPayload = {
       namespace_id: namespace.id,
       user_id: user.id,
       branch_name: payload.branch,
       stand_id: stand.id,
       repository_id: repository.id
-    })
+    }
+    const isBookingFreeBranch = parseBranchList(namespace.booking_free_branches).includes(payload.branch)
+    const bookingResult = isBookingFreeBranch
+      ? await bookingService.checkBooking(bookingPayload)
+      : await bookingService.createBooking(bookingPayload)
 
     if (bookingResult instanceof Error)
       return NextResponse.json({ error: bookingResult.message }, { status: httpStatus.BAD_REQUEST })
 
-    if (!bookingResult.is_already_booked && bookingResult.is_booking_allowed) {
+    if (!isBookingFreeBranch && !bookingResult.is_already_booked && bookingResult.is_booking_allowed) {
       const bookingHistoryResult = await bookingHistoryService.createBookingHistory(
         user.id,
         namespace.id,
@@ -111,11 +118,12 @@ const deploymentRequest = async (request: Request) => {
     }
 
     if (bookingResult.is_booking_allowed) {
+      await lastBranchService.remember(stand.id, repository.id, payload.branch)
       return NextResponse.json("Success!")
     }
 
     return NextResponse.json("1|Error")
-  } catch (error) {
+  } catch {
     return NextResponse.json("Success!")
   }
 }

@@ -1,5 +1,6 @@
+import { randomUUID } from "crypto"
+
 import dayjs from "dayjs"
-import { v4 as uuidv4 } from "uuid"
 
 enum PayloadKeySource {
   Request = "request",
@@ -28,7 +29,7 @@ export const getValueFromBodyByNestedKey = (nestedKeys: string, body: any) => {
 
       if (currentObj && typeof currentObj === "object" && currentObj[keyName][arrayIndex]) {
         currentObj = currentObj[keyName][arrayIndex]
-        // eslint-disable-next-line no-continue
+
         continue
       } else {
         return null
@@ -100,7 +101,7 @@ const parseVars = (
 const parseVar = (key: string): string | number | null => {
   switch (key) {
     case "uuid":
-      return `"${uuidv4()}"`
+      return `"${randomUUID()}"`
     case "unix":
       return dayjs().unix()
     case "dateYYYYMMDD":

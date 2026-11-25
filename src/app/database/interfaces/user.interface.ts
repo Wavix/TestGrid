@@ -13,8 +13,10 @@ export interface UserAttributes {
   namespace?: NonAttribute<NamespaceInstance>
 }
 
-export interface UserCreationAttributes
-  extends Optional<UserAttributes, "id" | "created_at" | "is_admin" | "is_active" | "namespace"> {}
+export interface UserCreationAttributes extends Optional<
+  UserAttributes,
+  "id" | "created_at" | "is_admin" | "is_active" | "namespace"
+> {}
 
 export interface UserInstance extends Model<UserAttributes, UserCreationAttributes>, UserAttributes {}
 

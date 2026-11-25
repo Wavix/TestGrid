@@ -1,0 +1,11 @@
+.git
+.github
+.next
+.swc
+node_modules
+coverage
+*.sqlite
+.env
+.env.*
+!.env.example
+tsconfig.tsbuildinfo

@@ -38,14 +38,19 @@ export const Switch: FC<Props> = ({
           </div>
         )}
 
-        <ChakraSwitch
+        <ChakraSwitch.Root
           size="lg"
-          colorScheme="facebook"
+          colorPalette="blue"
           defaultChecked={defaultChecked}
-          isChecked={isChecked}
+          checked={isChecked}
           readOnly={readonly}
-          onChange={e => (onChange ? onChange(e.target.checked) : undefined)}
-        />
+          onCheckedChange={details => (onChange ? onChange(details.checked) : undefined)}
+        >
+          <ChakraSwitch.HiddenInput />
+          <ChakraSwitch.Control>
+            <ChakraSwitch.Thumb />
+          </ChakraSwitch.Control>
+        </ChakraSwitch.Root>
 
         {titlePosition === "right" && (
           <div className={style.inlineHint}>

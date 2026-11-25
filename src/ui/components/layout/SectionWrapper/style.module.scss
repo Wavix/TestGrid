@@ -6,7 +6,7 @@
   flex-flow: column;
   flex: auto;
   padding: $content-top-padding $block-padding $block-padding $block-padding;
-  color: #fff;
+  color: $text;
   min-height: 100%;
 
   .sectionHeader {

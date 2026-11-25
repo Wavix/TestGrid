@@ -3,6 +3,8 @@ import { NextResponse } from "next/server"
 
 import { BookingService } from "@/app/services/booking.service"
 import { DashboardService } from "@/app/services/dashboard.service"
+import { syncK8sStands } from "@/app/services/k8s/sync-stands"
+import { LastBranchService } from "@/app/services/last-branch.service"
 import { NamespaceService } from "@/app/services/namespace.service"
 import { RepositoryService } from "@/app/services/repository.service"
 import { StandService } from "@/app/services/stand.service"
@@ -17,6 +19,7 @@ const repositoryService = new RepositoryService()
 const bookingService = new BookingService()
 const dashboardService = new DashboardService()
 const userService = new UserService()
+const lastBranchService = new LastBranchService()
 
 export const GET = async (request: Request) => await getStandsDashboard(request)
 
@@ -29,6 +32,8 @@ const getStandsDashboard = async (request: Request): Promise<NextResponse<Dashbo
     if (namespace instanceof Error)
       return NextResponse.json({ error: namespace.message }, { status: httpStatus.NOT_FOUND })
 
+    await syncK8sStands(namespace)
+
     const stands = await standService.findStandsByNamespaceId(namespace.id)
     if (stands instanceof Error) return NextResponse.json({ error: stands.message }, { status: httpStatus.BAD_REQUEST })
 
@@ -39,11 +44,13 @@ const getStandsDashboard = async (request: Request): Promise<NextResponse<Dashbo
     if (repositories instanceof Error)
       return NextResponse.json({ error: repositories.message }, { status: httpStatus.BAD_REQUEST })
 
+    const lastBranches = await lastBranchService.findByStandIds(stands.map(stand => stand.id))
+
     return NextResponse.json(
-      { stands: dashboardService.getDashboard(stands, books, repositories, user) },
+      { stands: dashboardService.getDashboard(stands, books, repositories, lastBranches, user) },
       { status: httpStatus.OK }
     )
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Can't get dashboard" }, { status: httpStatus.BAD_REQUEST })
   }
 }

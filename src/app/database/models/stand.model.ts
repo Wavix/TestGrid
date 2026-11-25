@@ -1,3 +1,5 @@
+import { StandKind, StandSource } from "@/interfaces/stand.interface"
+
 import type { StandInstance, StandModel } from "../interfaces/stand.interface"
 import type { Models } from "@/app/database/interfaces"
 import type Sequelize from "sequelize"
@@ -28,6 +30,20 @@ export const Stand = (sequelize: Sequelize.Sequelize, DataTypes: typeof Sequeliz
         type: DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: false
+      },
+      source: {
+        type: DataTypes.STRING,
+        defaultValue: StandSource.Manual,
+        allowNull: false
+      },
+      kind: {
+        type: DataTypes.STRING,
+        defaultValue: StandKind.Permanent,
+        allowNull: false
+      },
+      owner: {
+        type: DataTypes.STRING,
+        allowNull: true
       }
     },
     {

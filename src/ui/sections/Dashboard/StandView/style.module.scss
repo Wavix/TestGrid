@@ -1,0 +1,41 @@
+@use "src/styles/global.module.scss" as *;
+@use "src/styles/palette.module.scss" as *;
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-top: $content-top-padding;
+  border-bottom: 1px solid $split-line;
+}
+
+.tab {
+  margin-bottom: -1px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: $muted-text;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    color: $text;
+  }
+
+  &.active {
+    border-color: $split-line;
+    border-bottom-color: $dark;
+    background: $dark;
+    color: $text;
+  }
+}
+
+.standRepositories {
+  margin-top: $content-top-padding;
+}
+
+.empty {
+  color: $muted-text;
+  font-size: 13px;
+}

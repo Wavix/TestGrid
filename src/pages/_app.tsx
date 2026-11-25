@@ -1,9 +1,11 @@
 import { useRouter } from "next/router"
 import { useEffect, useState } from "react"
 
-import { ChakraProvider } from "@chakra-ui/react"
+import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
 
+import { Toaster } from "@/hooks/toast"
 import { LoginContext } from "@/ui/LoginContext"
+import { ThemeProvider } from "@/ui/ThemeContext"
 import { checkToken } from "@/ui/api/user"
 import { DefaultLayout } from "@/ui/components/layout"
 
@@ -68,17 +70,20 @@ const MyApp = ({ Component, pageProps }: AppProps) => {
   if (!isTokenChecked) return null
 
   return (
-    <ChakraProvider>
-      <LoginContext.Provider value={{ onLoginStateChange: onChangeLoginState, user }}>
-        {isLogin ? (
-          <DefaultLayout>
+    <ThemeProvider>
+      <ChakraProvider value={defaultSystem}>
+        <Toaster />
+        <LoginContext.Provider value={{ onLoginStateChange: onChangeLoginState, user }}>
+          {isLogin ? (
+            <DefaultLayout>
+              <Component {...pageProps} />
+            </DefaultLayout>
+          ) : (
             <Component {...pageProps} />
-          </DefaultLayout>
-        ) : (
-          <Component {...pageProps} />
-        )}
-      </LoginContext.Provider>
-    </ChakraProvider>
+          )}
+        </LoginContext.Provider>
+      </ChakraProvider>
+    </ThemeProvider>
   )
 }
 
